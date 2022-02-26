@@ -85,8 +85,9 @@ public class Cookie {
      * Set the name of the cookie.
      * @param name new cookie name
      */
-    public void setName(String name) {
+    public Cookie setName(String name) {
         this.name = name;
+        return this;
     }
 
     /**
@@ -100,8 +101,9 @@ public class Cookie {
      * Set the value of the cookie.
      * @param value new cookie value
      */
-    public void setValue(String value) {
+    public Cookie setValue(String value) {
         this.value = value;
+        return this;
     }
 
     /**
@@ -115,8 +117,9 @@ public class Cookie {
      * Set the expiration date of the cookie.
      * @param expires new cookie expiration date
      */
-    public void setExpires(Date expires) {
+    public Cookie setExpires(Date expires) {
         this.expires = expires;
+        return this;
     }
 
     /**
@@ -130,8 +133,9 @@ public class Cookie {
      * Set the time interval determines how long the cookie exists.
      * @param maxAge new cookie life length
      */
-    public void setMaxAge(Integer maxAge) {
+    public Cookie setMaxAge(Integer maxAge) {
         this.maxAge = maxAge;
+        return this;
     }
 
     /**
@@ -145,8 +149,9 @@ public class Cookie {
      * Set the domain the cookie belongs to (including subdomains).
      * @param domain new cookie domain
      */
-    public void setDomain(String domain) {
+    public Cookie setDomain(String domain) {
         this.domain = domain;
+        return this;
     }
 
     /**
@@ -160,8 +165,9 @@ public class Cookie {
      * Set the url path that the cookie belongs to.
      * @param path new cookie path
      */
-    public void setPath(String path) {
+    public Cookie setPath(String path) {
         this.path = path;
+        return this;
     }
 
     /**
@@ -175,8 +181,9 @@ public class Cookie {
      * Determine if the cookie should be only sent via HTTPS.
      * @param secure only HTTPs is allowed
      */
-    public void setSecure(boolean secure) {
+    public Cookie setSecure(boolean secure) {
         this.secure = secure;
+        return this;
     }
 
     /**
@@ -190,8 +197,9 @@ public class Cookie {
      * Determine if the cookie should be inaccessible to javascript.
      * @param httpOnly cookie is inaccessible to javascript
      */
-    public void setHttpOnly(boolean httpOnly) {
+    public Cookie setHttpOnly(boolean httpOnly) {
         this.httpOnly = httpOnly;
+        return this;
     }
 
     /**
@@ -205,8 +213,9 @@ public class Cookie {
      * Set the cookie cross-site request rule.
      * @param sameSite new cookie rule
      */
-    public void setSameSite(String sameSite) {
+    public Cookie setSameSite(String sameSite) {
         this.sameSite = sameSite;
+        return this;
     }
 
     /**

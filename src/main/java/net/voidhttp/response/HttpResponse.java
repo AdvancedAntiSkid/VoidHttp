@@ -175,7 +175,7 @@ public class HttpResponse implements Response {
      * @param message new status message
      */
     @Override
-    public Response status(String message) {
+    public Response message(String message) {
         this.message = message;
         return this;
     }

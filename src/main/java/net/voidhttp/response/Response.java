@@ -74,7 +74,7 @@ public interface Response {
      * Set the response status message
      * @param message new status message
      */
-    Response status(String message);
+    Response message(String message);
 
     /**
      * Get the registry of the response headers.

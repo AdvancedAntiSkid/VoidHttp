@@ -1,13 +1,11 @@
 import net.voidhttp.HttpServer;
-import net.voidhttp.util.JsonBuilder;
 
 public class ServerTest {
     public static void main(String[] args) throws Exception {
         HttpServer server = new HttpServer();
 
         server.get("/", (req, res) -> {
-            System.out.println(req.parameters());
-            res.send(new JsonBuilder("skid", true).build());
+            res.status(418).message("I'm a teapot");
         });
 
         server.listen(80, () -> {
