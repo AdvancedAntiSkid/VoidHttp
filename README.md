@@ -52,25 +52,25 @@ server.error(404, (req, res) -> {
 });
 ```
 
-# Template rendering
+## Template rendering
 ```java
 res.render("MyTemplate", 
     new Placeholder("name", "John Doe"), 
     new Placeholder("balance", "100$"));
 ```
 
-# Redirects
+## Redirects
 ```java
 res.redirect("https://google.com", 5);
 res.redirect("https://youtube.com");
 ```
 
-# Receiving json
+## Receiving json
 ```java
 JsonObject json = req.json();
 ```
 
-# Sending json
+## Sending json
 ```java
 res.send(new JsonBuilder()
     .set("message", "Hello, World!")
@@ -78,7 +78,7 @@ res.send(new JsonBuilder()
     .build());
 ```
 
-# Response status
+## Response status
 ```java
 res.status(418).message("I'm a teapot");
 ```
