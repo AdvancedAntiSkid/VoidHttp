@@ -44,3 +44,10 @@ server.use((req, res) -> {
     System.out.println("global middleware");
 });
 ```
+
+## Error handling
+```java
+server.error(404, (req, res) -> {
+    res.send("Page not found :c");
+});
+```
