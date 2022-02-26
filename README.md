@@ -82,3 +82,18 @@ res.send(new JsonBuilder()
 ```java
 res.status(418).message("I'm a teapot");
 ```
+
+## Receiving cookies
+```java
+Cookies cookies = res.cookies();
+System.out.println("secret: " + cookies.get("session-token"));
+```
+
+## Sending cookies
+```java
+Cookie cookie = new Cookie("name", "value")
+    .setMaxAge(10)
+    .setSecure(true)
+    .setDomain("example.com");
+res.cookies().add(cookie);
+```
