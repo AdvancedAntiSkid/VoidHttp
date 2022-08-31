@@ -1,5 +1,5 @@
 # VoidHttp
-A simple java http server using the express.js syntax.
+A simple multithread java http server using the express.js syntax.
 
 # Examples
 
