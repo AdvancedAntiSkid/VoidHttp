@@ -1,5 +1,5 @@
 # VoidHttp
-A simple java http server using the express.js syntax.
+A simple multithread java http server using the express.js syntax.
 
 # Examples
 
@@ -35,7 +35,7 @@ System.out.println("user: " + headers.get("User-Agent"));
 
 ## Static resource folders
 ```java
-server.use(HttpServer.staticFolder("/public"));
+server.use(Handlers.staticFolder("/public"));
 ```
 
 ## Global middlewares
