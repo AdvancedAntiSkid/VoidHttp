@@ -8,7 +8,6 @@ import net.voidhttp.response.cookie.ResponseCookies;
 import net.voidhttp.util.asset.Asset;
 import net.voidhttp.util.asset.MIMEType;
 import net.voidhttp.util.Placeholder;
-import net.voidhttp.util.asset.Template;
 
 import java.io.IOException;
 import java.io.OutputStream;

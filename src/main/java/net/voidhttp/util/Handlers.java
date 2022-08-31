@@ -1,6 +1,6 @@
 package net.voidhttp.util;
 
-import net.voidhttp.Handler;
+import net.voidhttp.handler.Handler;
 import net.voidhttp.util.asset.Asset;
 import net.voidhttp.util.asset.MIMEType;
 import net.voidhttp.util.asset.Resource;

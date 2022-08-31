@@ -1,4 +1,4 @@
-package net.voidhttp;
+package net.voidhttp.handler;
 
 import net.voidhttp.request.Request;
 import net.voidhttp.response.Response;

@@ -1,5 +1,6 @@
-package net.voidhttp;
+package net.voidhttp.handler;
 
+import net.voidhttp.HttpServer;
 import net.voidhttp.request.Method;
 
 import java.util.ArrayList;
