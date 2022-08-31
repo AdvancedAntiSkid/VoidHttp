@@ -35,7 +35,7 @@ System.out.println("user: " + headers.get("User-Agent"));
 
 ## Static resource folders
 ```java
-server.use(HttpServer.staticFolder("/public"));
+server.use(Handlers.staticFolder("/public"));
 ```
 
 ## Global middlewares
