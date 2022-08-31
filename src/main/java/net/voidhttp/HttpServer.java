@@ -35,17 +35,15 @@ public class HttpServer {
      */
     private final List<Handler> handlerList = new ArrayList<>();
 
+    /**
+     * The increment-based thread name indicator.
+     */
     private final AtomicInteger threadId = new AtomicInteger(1);
 
     /**
      * Determines if the server is running.
      */
     private volatile boolean running;
-
-    /**
-     * The executor service used for asynchronous task processing.
-     */
-    private ExecutorService executor;
 
     /**
      * Register a handler for the given request method.
@@ -146,7 +144,6 @@ public class HttpServer {
         }
         // close the socket server
         server.close();
-        executor.shutdown();
         System.out.println("[VoidHttp] Server shut down.");
     }
 
@@ -156,9 +153,13 @@ public class HttpServer {
      * @param actions server startup handlers
      */
     public void listenAsync(int port, Runnable... actions) {
-        Threading.create("listener-thread").execute(() -> {
+        ExecutorService executor = Threading.create("listener-thread");
+        executor.execute(() -> {
             try {
+                // start the webserver and block this thread until shutdown
                 listen(port, actions);
+                // server has stopped, terminate the executor
+                Threading.terminate(executor);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -251,12 +252,5 @@ public class HttpServer {
      */
     public void shutdown() {
         running = false;
-    }
-
-    /**
-     * Get the executor service used for asynchronous task processing.
-     */
-    public ExecutorService getExecutor() {
-        return executor;
     }
 }
