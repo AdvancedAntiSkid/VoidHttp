@@ -1,7 +1,5 @@
 package net.voidhttp.request.parameter;
 
-import net.voidhttp.request.cookie.RequestCookies;
-
 import java.util.HashMap;
 import java.util.Map;
 

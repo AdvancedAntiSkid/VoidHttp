@@ -40,7 +40,7 @@ public class HttpHeaders implements Headers {
     @Override
     public Header get(String key) {
         for (Header header : headers) {
-            if (header.key().equals(key)) {
+            if (header.is(key)) {
                 return header;
             }
         }
@@ -54,7 +54,7 @@ public class HttpHeaders implements Headers {
      */
     @Override
     public List<Header> getAll(String key) {
-        return headers.stream().filter(header -> header.key().equals(key))
+        return headers.stream().filter(header -> header.is(key))
             .collect(Collectors.toList());
     }
 
@@ -74,7 +74,7 @@ public class HttpHeaders implements Headers {
      */
     @Override
     public void add(String key, Object value) {
-        headers.add(new Header(key, String.valueOf(value)));
+        headers.add(new Header(key, value));
     }
 
     /**
@@ -117,7 +117,7 @@ public class HttpHeaders implements Headers {
     public boolean remove(String key) {
         Iterator<Header> iterator = headers.iterator();
         while (iterator.hasNext()) {
-            if (iterator.next().key().equals(key)) {
+            if (iterator.next().is(key)) {
                 iterator.remove();
                 return false;
             }
@@ -132,7 +132,7 @@ public class HttpHeaders implements Headers {
      */
     @Override
     public boolean removeAll(String key) {
-        return headers.removeIf(header -> header.key().equals(key));
+        return headers.removeIf(header -> header.is(key));
     }
 
     /**

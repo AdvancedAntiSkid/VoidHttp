@@ -43,4 +43,23 @@ public class Randomizer {
         }
         return new String(buffer);
     }
+
+    /**
+     * Generate a random integer between the given range.
+     * @param min range minimum
+     * @param max range maximum
+     * @return random integer in range [min;max[
+     */
+    public static int randomInt(int min, int max) {
+        return random.nextInt(max - min) + min;
+    }
+
+    /**
+     * Generate a random integer between the given range.
+     * @param max range maximum
+     * @return random integer in range [0;max[
+     */
+    public static int randomInt(int max) {
+        return random.nextInt(max);
+    }
 }

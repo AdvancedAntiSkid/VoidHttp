@@ -1,30 +1,23 @@
 package net.voidhttp;
 
-import net.voidhttp.request.session.SessionManager;
-import net.voidhttp.util.CustomPrintStream;
+import net.voidhttp.request.query.Query;
+import net.voidhttp.request.query.RequestQuery;
 import net.voidhttp.request.HttpRequest;
 import net.voidhttp.request.Method;
 import net.voidhttp.response.HttpResponse;
-import net.voidhttp.util.MIMEType;
-import net.voidhttp.util.Resource;
+import net.voidhttp.util.threading.Threading;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Represents an advanced multi-threaded HTTP server.
  */
 public class HttpServer {
-    // perform console manipulation
-    static {
-        System.setOut(new CustomPrintStream("INFO"));
-        System.setErr(new CustomPrintStream("ERROR"));
-    }
-
     /**
      * The map of the registered HTTP routes.
      */
@@ -40,20 +33,12 @@ public class HttpServer {
      */
     private final List<Handler> handlerList = new ArrayList<>();
 
-    /**
-     * The client request session cache.
-     */
-    private final SessionManager sessionManager = new SessionManager();
+    private final AtomicInteger threadId = new AtomicInteger(1);
 
     /**
      * Determines if the server is running.
      */
     private volatile boolean running;
-
-    /**
-     * The number of threads to be used for processing.
-     */
-    private int poolSize = Runtime.getRuntime().availableProcessors();
 
     /**
      * The executor service used for asynchronous task processing.
@@ -119,22 +104,6 @@ public class HttpServer {
     }
 
     /**
-     * Set the number of threads to be used for processing.
-     * @param poolSize new thread pool size
-     */
-    public HttpServer setPoolSize(int poolSize) {
-        this.poolSize = poolSize;
-        return this;
-    }
-
-    /**
-     * Get the number of threads to be used for processing.
-     */
-    public int getPoolSize() {
-        return poolSize;
-    }
-
-    /**
      * Start the HTTP server and begin listening for requests.
      * @param port server port
      * @param actions server startup handlers
@@ -146,7 +115,6 @@ public class HttpServer {
             throw new IllegalStateException("Server is already running");
         // create socket server
         ServerSocket server = new ServerSocket(port);
-        executor = Executors.newFixedThreadPool(poolSize);
         running = true;
         // notify startup actions
         for (Runnable action : actions)
@@ -155,23 +123,44 @@ public class HttpServer {
         while (running) {
             // accept client connection
             Socket socket = server.accept();
-            // create request and response
-            HttpRequest request = new HttpRequest(socket, executor);
-            HttpResponse response = new HttpResponse(socket);
-            // open the request
-            request.open(((method, url) -> {
-                // handle the parsed request
-                try {
-                    handleRequest(request, response);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }));
+            // create a new thread for handling the request
+            ExecutorService executor = Threading.create("request-thread-" + threadId.getAndIncrement());
+            executor.execute(() -> {
+                // create request and response
+                HttpRequest request = new HttpRequest(socket);
+                HttpResponse response = new HttpResponse(socket);
+                // open the request
+                request.open(((method, url) -> {
+                    // handle the parsed request
+                    try {
+                        handleRequest(request, response);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }));
+                // executing has ended, shutdown the executor
+                Threading.terminate(executor);
+            });
         }
         // close the socket server
         server.close();
         executor.shutdown();
         System.out.println("[VoidHttp] Server shut down.");
+    }
+
+    /**
+     * Asynchronously start the HTTP server and begin listening for requests.
+     * @param port server port
+     * @param actions server startup handlers
+     */
+    public void listenAsync(int port, Runnable... actions) {
+        Threading.create("listener-thread").execute(() -> {
+            try {
+                listen(port, actions);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     /**
@@ -182,8 +171,8 @@ public class HttpServer {
      */
     private void handleRequest(HttpRequest request, HttpResponse response) throws Exception {
         // get the necessary request data
-        Method method = request.getMethod();
-        String url = request.getRoute();
+        Method method = request.method();
+        String url = request.route();
         // handle globally used middlewares
         // this is must be done before handling the method handlers
         for (Handler handler : handlerList) {
@@ -217,9 +206,11 @@ public class HttpServer {
         // handle the routes registered for the method
         for (Route route : routes) {
             // continue if the route did not pass the test
-            if (!route.test(url))
+            Query query = new RequestQuery();
+            if (!route.test(url, query))
                 continue;
             // handle the request
+            request.setQuery(query);
             route.handle(request, response);
             handled = true;
             // stop processing if the handler did not pass the handling
@@ -254,37 +245,6 @@ public class HttpServer {
     }
 
     /**
-     * Create a static folder handler.
-     * @param path static folder path
-     */
-    public static Handler staticFolder(String path) {
-        // create a new handler for the resource files
-        return (req, res) -> {
-            // get the requested url
-            String route = req.getRoute();
-            // move to the next handler if the route is not a resource file request
-            if (!route.startsWith(path + "/")) {
-                req.next();
-                return;
-            }
-            // split up url between every '/' char
-            String[] parts = route.split("/");
-            // get the last part of the url
-            String file = parts[parts.length - 1];
-            // split up filename and extension
-            parts = file.split("\\.");
-            // get file extension
-            String extension = "." + parts[parts.length - 1];
-            // get the MIME type of the file
-            MIMEType type = MIMEType.fromExtensionOrDefault(extension, MIMEType.PLAIN_TEXT);
-            // get the content of the resource file
-            byte[] bytes = Resource.get(route);
-            // send the content of the resource
-            res.send(bytes, type);
-        };
-    }
-
-    /**
      * Stop the HTTP server and close connections.
      */
     public void shutdown() {
@@ -296,12 +256,5 @@ public class HttpServer {
      */
     public ExecutorService getExecutor() {
         return executor;
-    }
-
-    /**
-     * Get the client request session cache.
-     */
-    public SessionManager getSessionManager() {
-        return sessionManager;
     }
 }

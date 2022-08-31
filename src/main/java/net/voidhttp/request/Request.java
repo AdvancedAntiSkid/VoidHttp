@@ -4,6 +4,8 @@ import com.google.gson.JsonObject;
 import net.voidhttp.header.Headers;
 import net.voidhttp.request.cookie.Cookies;
 import net.voidhttp.request.parameter.Parameters;
+import net.voidhttp.request.query.Query;
+import net.voidhttp.request.session.Session;
 
 import java.net.InetAddress;
 
@@ -14,12 +16,12 @@ public interface Request {
     /**
      * Get the requested url.
      */
-    String getRoute();
+    String route();
 
     /**
      * Get the HTTP request method used.
      */
-    Method getMethod();
+    Method method();
 
     /**
      * The current handler has passed executing.
@@ -67,4 +69,19 @@ public interface Request {
      * Get the request parameters.
      */
     Parameters parameters();
+
+    /**
+     * Get the current request session.
+     */
+    Session session();
+
+    /**
+     * The query data of the url.
+     */
+    Query query();
+
+    /**
+     * Set the current request session.
+     */
+    void setSession(Session session);
 }

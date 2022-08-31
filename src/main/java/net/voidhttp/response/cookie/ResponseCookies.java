@@ -70,6 +70,24 @@ public class ResponseCookies implements Cookies {
     }
 
     /**
+     * Invalidate a client cookie.
+     * @param name cookie name
+     */
+    @Override
+    public void invalidate(String name) {
+        add(new Cookie(name, "").setMaxAge(0));
+    }
+
+    /**
+     * Invalidate a client cookie.
+     * @param cookie cookie to invalidate
+     */
+    @Override
+    public void invalidate(Cookie cookie) {
+        invalidate(cookie.getName());
+    }
+
+    /**
      * Get the list of the cookies to be set.
      * @return cookie list
      */

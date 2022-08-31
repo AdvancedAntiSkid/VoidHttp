@@ -2,6 +2,9 @@ package net.voidhttp;
 
 import net.voidhttp.request.Request;
 import net.voidhttp.response.Response;
+import net.voidhttp.util.asset.Asset;
+import net.voidhttp.util.asset.MIMEType;
+import net.voidhttp.util.asset.Resource;
 
 /**
  * Represents a HTTP middleware that attached to a route and

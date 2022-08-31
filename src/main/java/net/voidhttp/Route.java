@@ -1,7 +1,12 @@
 package net.voidhttp;
 
 import net.voidhttp.request.Request;
+import net.voidhttp.request.query.Query;
+import net.voidhttp.request.query.RequestQuery;
 import net.voidhttp.response.Response;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Represents a holder of HTTP request handlers that calls
@@ -33,7 +38,9 @@ public class Route {
      * @param url request url
      * @return true if the url passed the test
      */
-    public boolean test(String url) {
+    public boolean test(String url, Query query) {
+        // the registry of the url query
+        Map<String, String> queryData = new HashMap<>();
         // split up url between the '/' chars
         String[] routeParts = route.split("/");
         String[] urlParts = url.split("/");
@@ -48,14 +55,19 @@ public class Route {
             // continue if the current part is an empty string
             if (routePart.isEmpty() && urlPart.isEmpty())
                 continue;
-            // continue if the current part is a placeholder,
-            // thus starts with a colon
-            if (routePart.startsWith(":"))
+            // check if the part is a query placeholder
+            if (routePart.startsWith(":")) {
+                queryData.put(routePart.substring(1), urlPart);
                 continue;
+            }
             // test if the current part does not match the registered one
             if (!routePart.equals(urlPart))
                 return false;
         }
+        // apply query data
+        RequestQuery requestQuery = (RequestQuery) query;
+        for (Map.Entry<String, String> entry : queryData.entrySet())
+            requestQuery.set(entry.getKey(), entry.getValue());
         // url passed the test
         return true;
     }
@@ -81,5 +93,19 @@ public class Route {
                 e.printStackTrace();
             }
         }
+    }
+
+    /**
+     * The request route url;
+     */
+    public String getRoute() {
+        return route;
+    }
+
+    /**
+     * The array of request handlers.
+     */
+    public Handler[] getHandlers() {
+        return handlers;
     }
 }

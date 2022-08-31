@@ -5,11 +5,11 @@ import net.voidhttp.header.Headers;
 import net.voidhttp.header.HttpHeaders;
 import net.voidhttp.response.cookie.Cookies;
 import net.voidhttp.response.cookie.ResponseCookies;
-import net.voidhttp.util.MIMEType;
+import net.voidhttp.util.asset.Asset;
+import net.voidhttp.util.asset.MIMEType;
 import net.voidhttp.util.Placeholder;
-import net.voidhttp.util.Template;
+import net.voidhttp.util.asset.Template;
 
-import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -93,7 +93,7 @@ public class HttpResponse implements Response {
      */
     @Override
     public void send(byte[] bytes) throws IOException {
-        send(bytes, MIMEType.HTML);
+        send(bytes, MIMEType.BINARY);
     }
 
     /**
@@ -130,15 +130,26 @@ public class HttpResponse implements Response {
      * @param placeholders template placeholders
      */
     @Override
-    public void render(String template, Placeholder... placeholders) throws IOException {
+    public void render(String template, boolean cache, Placeholder... placeholders) throws IOException {
         // get the template from cache
-        String content = Template.get(template);
+        String path = "./templates/" + template + ".html";
+        String content = cache ? Asset.getUTF(path) : Asset.loadUTF(path);
         // replace the template placeholders
         for (Placeholder placeholder : placeholders) {
             content = content.replace(placeholder.getKey(), placeholder.getValue());
         }
         // send the built template
-        send(content);
+        send(content, MIMEType.HTML);
+    }
+
+    /**
+     * Respond to the request with a template.
+     * @param template server template
+     * @param placeholders template placeholders
+     */
+    @Override
+    public void render(String template, Placeholder... placeholders) throws IOException {
+        render(template, false, placeholders);
     }
 
     /**

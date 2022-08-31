@@ -9,12 +9,16 @@ import net.voidhttp.request.cookie.Cookies;
 import net.voidhttp.request.cookie.RequestCookies;
 import net.voidhttp.request.parameter.Parameters;
 import net.voidhttp.request.parameter.RequestParameters;
+import net.voidhttp.request.query.Query;
+import net.voidhttp.request.query.RequestQuery;
+import net.voidhttp.request.session.Session;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.concurrent.Executor;
@@ -30,14 +34,14 @@ public class HttpRequest implements Request {
     private final Socket socket;
 
     /**
-     * The executor service used for asynchronous task processing.
-     */
-    private final Executor executor;
-
-    /**
      * The requesting client's address.
      */
     private final InetAddress host;
+
+    /**
+     * The query of the request url.
+     */
+    private Query query;
 
     /**
      * The action to be invoked when the request is handled.
@@ -79,16 +83,24 @@ public class HttpRequest implements Request {
      */
     private JsonObject json;
 
+    /**
+     * The current session of the request.
+     */
+    private Session session;
+
+    /**
+     * Determines if the current request was passed.
+     */
     private boolean passed;
 
     /**
      * Initialize the http request.
      * @param socket connecting socket
      */
-    public HttpRequest(Socket socket, Executor executor) {
+    public HttpRequest(Socket socket) {
         this.socket = socket;
-        this.executor = executor;
         host = socket.getInetAddress();
+        query = new RequestQuery(new HashMap<>());
     }
 
     /**
@@ -136,7 +148,7 @@ public class HttpRequest implements Request {
                 : RequestCookies.empty();
             // get the length of the body
             // read the body of the request
-            Header contentLength = headers.get("content-length");
+            Header contentLength = headers.get("Content-Length");
             if (contentLength != null) {
                 StringBuilder builder = new StringBuilder();
                 int length = Integer.parseInt(contentLength.value());
@@ -170,14 +182,14 @@ public class HttpRequest implements Request {
      */
     public void open(BiConsumer<Method, String> action) {
         this.action = action;
-        executor.execute(this::handle);
+        handle();
     }
 
     /**
      * Get the requested url.
      */
     @Override
-    public String getRoute() {
+    public String route() {
         return route;
     }
 
@@ -185,7 +197,7 @@ public class HttpRequest implements Request {
      * Get the HTTP request method used.
      */
     @Override
-    public Method getMethod() {
+    public Method method() {
         return method;
     }
 
@@ -261,5 +273,37 @@ public class HttpRequest implements Request {
     @Override
     public Parameters parameters() {
         return parameters;
+    }
+
+    /**
+     * Get the current request session.
+     */
+    @Override
+    public Session session() {
+        return session;
+    }
+
+    /**
+     * The query data of the url.
+     */
+    @Override
+    public Query query() {
+        return query;
+    }
+
+    /**
+     * Set the query of the request.
+     * @param query new query
+     */
+    public void setQuery(Query query) {
+        this.query = query;
+    }
+
+    /**
+     * Set the current request session.
+     */
+    @Override
+    public void setSession(Session session) {
+        this.session = session;
     }
 }

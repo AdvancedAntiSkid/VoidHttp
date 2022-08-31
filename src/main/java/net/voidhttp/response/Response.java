@@ -3,7 +3,7 @@ package net.voidhttp.response;
 import com.google.gson.JsonObject;
 import net.voidhttp.header.Headers;
 import net.voidhttp.response.cookie.Cookies;
-import net.voidhttp.util.MIMEType;
+import net.voidhttp.util.asset.MIMEType;
 import net.voidhttp.util.Placeholder;
 
 import java.io.IOException;
@@ -43,6 +43,13 @@ public interface Response {
      * @param json response json
      */
     void send(JsonObject json) throws IOException;
+
+    /**
+     * Respond to the request with a template.
+     * @param template server template
+     * @param placeholders template placeholders
+     */
+    void render(String template, boolean cache, Placeholder... placeholders) throws IOException;
 
     /**
      * Respond to the request with a template.

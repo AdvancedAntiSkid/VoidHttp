@@ -36,6 +36,18 @@ public interface Cookies {
     boolean remove(Cookie cookie);
 
     /**
+     * Invalidate a client cookie.
+     * @param name cookie name
+     */
+    void invalidate(String name);
+
+    /**
+     * Invalidate a client cookie.
+     * @param cookie cookie to invalidate
+     */
+    void invalidate(Cookie cookie);
+
+    /**
      * Get the list of the cookies to be set.
      * @return cookie list
      */
