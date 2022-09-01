@@ -7,6 +7,8 @@ import net.voidhttp.header.Headers;
 import net.voidhttp.header.HttpHeaders;
 import net.voidhttp.request.cookie.Cookies;
 import net.voidhttp.request.cookie.RequestCookies;
+import net.voidhttp.request.data.Data;
+import net.voidhttp.request.data.RequestData;
 import net.voidhttp.request.parameter.Parameters;
 import net.voidhttp.request.parameter.RequestParameters;
 import net.voidhttp.request.query.Query;
@@ -72,6 +74,11 @@ public class HttpRequest implements Request {
      * The registry of the request cookies.
      */
     private Cookies cookies;
+
+    /**
+     * The registry of the passed data.
+     */
+    private Data data;
 
     /**
      * The body of the request.
@@ -146,6 +153,8 @@ public class HttpRequest implements Request {
             cookies = header != null
                 ? RequestCookies.parse(header.value())
                 : RequestCookies.empty();
+            // create request transfer data holder
+            data = new RequestData();
             // get the length of the body
             // read the body of the request
             Header contentLength = headers.get("Content-Length");
@@ -231,7 +240,7 @@ public class HttpRequest implements Request {
      * @return ip address
      */
     @Override
-    public InetAddress getHost() {
+    public InetAddress host() {
         return host;
     }
 
@@ -249,6 +258,14 @@ public class HttpRequest implements Request {
     @Override
     public Cookies cookies() {
         return cookies;
+    }
+
+    /**
+     * Get the registry of the passed values.
+     */
+    @Override
+    public Data data() {
+        return data;
     }
 
     /**

@@ -3,6 +3,7 @@ package net.voidhttp.request;
 import com.google.gson.JsonObject;
 import net.voidhttp.header.Headers;
 import net.voidhttp.request.cookie.Cookies;
+import net.voidhttp.request.data.Data;
 import net.voidhttp.request.parameter.Parameters;
 import net.voidhttp.request.query.Query;
 import net.voidhttp.request.session.Session;
@@ -43,7 +44,7 @@ public interface Request {
      * Get the address of the requesting client.
      * @return ip address
      */
-    InetAddress getHost();
+    InetAddress host();
 
     /**
      * Get the registry of the requested headers.
@@ -54,6 +55,11 @@ public interface Request {
      * Get the registry of the request cookies.
      */
     Cookies cookies();
+
+    /**
+     * Get the registry of the passed values.
+     */
+    Data data();
 
     /**
      * Get the request body content.
