@@ -37,6 +37,10 @@ public final class Handlers {
             // get the content of the asset file
             route = '.' + route;
             byte[] bytes = cache ? Asset.get(route) : Asset.load(route);
+            if (bytes == null) {
+                res.status(404).send("<pre>" + "Cannot " + req.method() + " " + req.route() + "</pre>");
+                return;
+            }
             // send the content of the asset
             res.send(bytes, type);
         };
