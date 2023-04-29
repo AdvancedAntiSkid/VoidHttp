@@ -1,5 +1,6 @@
 package net.voidhttp;
 
+import net.voidhttp.config.Flag;
 import net.voidhttp.handler.Handler;
 import net.voidhttp.handler.Route;
 import net.voidhttp.request.query.Query;
@@ -44,6 +45,11 @@ public class HttpServer {
      * Determines if the server is running.
      */
     private volatile boolean running;
+
+    /**
+     * The server configuration flags.
+     */
+    private int flags;
 
     /**
      * Register a handler for the given request method.
@@ -104,6 +110,35 @@ public class HttpServer {
     }
 
     /**
+     * Enable server configuration flags.
+     * @param flags config flags to enable
+     */
+    public HttpServer enableFlags(Flag... flags) {
+        for (Flag flag : flags)
+            this.flags |= flag.getId();
+        return this;
+    }
+
+    /**
+     * Disable server configuration flags.
+     * @param flags config flags to disable
+     */
+    public HttpServer disableFlags(Flag... flags) {
+        for (Flag flag : flags)
+            this.flags &= ~flag.getId();
+        return this;
+    }
+
+    /**
+     * Determine if the server has a configuration flag enabled.
+     * @param flag flag to check
+     * @return true if the flag is enabled
+     */
+    public boolean hasFlag(Flag flag) {
+        return (this.flags & flag.getId()) > 0;
+    }
+
+    /**
      * Start the HTTP server and begin listening for requests.
      * @param port server port
      * @param actions server startup handlers
@@ -128,13 +163,14 @@ public class HttpServer {
             executor.execute(() -> {
                 // create request and response
                 HttpRequest request = new HttpRequest(socket);
-                HttpResponse response = new HttpResponse(socket);
+                HttpResponse response = new HttpResponse(this, socket);
                 // open the request
                 request.open(((method, url) -> {
                     // handle the parsed request
                     try {
                         handleRequest(request, response);
                     } catch (Exception e) {
+                        // TODO handleError(err code, stack trace)
                         e.printStackTrace();
                     }
                 }));
@@ -200,7 +236,9 @@ public class HttpServer {
         List<Route> routes = routeMap.get(method);
         // check if there aren't any handlers for the method
         if (routes == null || routes.isEmpty()) {
-            response.send("<pre>" + "Cannot " + method + " " + url + "</pre>");
+            // TODO add custom 404 handler here as well
+            // TODO replace this with handleStatus(404)
+            response.status(404).send("<pre>" + "Cannot " + method + " " + url + "</pre>");
             return;
         }
         // declare a variable for determining if the request was handled or not
@@ -223,6 +261,7 @@ public class HttpServer {
         }
         // check for 404 error handlers that will override
         // the default "not found" handler
+        // TODO replace this with handleStatus(404)
         if (!handled) {
             // get the 404 handlers
             List<Route> errorRoutes = errorMap.get(404);
@@ -243,7 +282,7 @@ public class HttpServer {
         // check if the request was not handled and there
         // weren't any 404 handlers
         if (!handled) {
-            response.send("<pre>" + "Cannot " + method + " " + url + "</pre>");
+            response.status(404).send("<pre>" + "Cannot " + method + " " + url + "</pre>");
         }
     }
 

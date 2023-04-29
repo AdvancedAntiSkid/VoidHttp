@@ -7,6 +7,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
@@ -54,19 +55,14 @@ public class Asset {
      * @return asset content
      */
     public static byte[] load(String asset) {
-        try {
-            // get the input stream of the asset file
-            InputStream stream = new FileInputStream(asset);
+        // get the input stream of the asset file
+        try (InputStream stream = Files.newInputStream(Paths.get(asset))) {
             // load the content of the file
-            byte[] bytes = ByteStreams.toByteArray(stream);
-            // close the reader
-            stream.close();
-            return bytes;
+            return ByteStreams.toByteArray(stream);
         }
         // handle invalid file read
         catch (IOException e) {
-            // TODO send 404
-            return new byte[0];
+            return null;
         }
     }
 
@@ -76,7 +72,10 @@ public class Asset {
      * @return asset content
      */
     public static String loadUTF(String asset) {
-        return new String(load(asset), StandardCharsets.UTF_8);
+        byte[] bytes = load(asset);
+        if (bytes == null)
+            return null;
+        return new String(bytes, StandardCharsets.UTF_8);
     }
 
     /**

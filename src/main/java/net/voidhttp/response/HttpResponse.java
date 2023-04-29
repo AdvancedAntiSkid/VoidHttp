@@ -1,6 +1,9 @@
 package net.voidhttp.response;
 
+import com.google.common.io.ByteStreams;
 import com.google.gson.JsonObject;
+import net.voidhttp.HttpServer;
+import net.voidhttp.config.Flag;
 import net.voidhttp.header.Headers;
 import net.voidhttp.header.HttpHeaders;
 import net.voidhttp.response.cookie.Cookies;
@@ -8,10 +11,9 @@ import net.voidhttp.response.cookie.ResponseCookies;
 import net.voidhttp.util.asset.Asset;
 import net.voidhttp.util.asset.MIMEType;
 import net.voidhttp.util.Placeholder;
+import net.voidhttp.util.json.JsonBuilder;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -20,6 +22,11 @@ import java.util.Date;
  * Represents a HTTP server response to a client HTTP request.
  */
 public class HttpResponse implements Response {
+    /**
+     * The server that handles the http response.
+     */
+    private final HttpServer server;
+
     /**
      * The requesting client socket.
      */
@@ -49,7 +56,8 @@ public class HttpResponse implements Response {
      * Initialize the HTTP response.
      * @param socket client socket
      */
-    public HttpResponse(Socket socket) {
+    public HttpResponse(HttpServer server, Socket socket) {
+        this.server = server;
         this.socket = socket;
         headers = HttpHeaders.empty();
         cookies = new ResponseCookies();
@@ -68,7 +76,8 @@ public class HttpResponse implements Response {
         // write the response status
         writer.println("HTTP/1.1 " + code + " " + message);
         // write the default header values if they are missing
-        headers.addIfAbsent("Server", "VoidHttp 1.0");
+        if (!server.hasFlag(Flag.NO_SERVER_NAME))
+            headers.addIfAbsent("Server", "VoidHttp 1.0");
         headers.addIfAbsent("Date", new Date());
         headers.addIfAbsent("Content-type", type);
         headers.addIfAbsent("Content-length", bytes.length);
@@ -121,6 +130,43 @@ public class HttpResponse implements Response {
     @Override
     public void send(JsonObject json) throws IOException {
         send(json.toString(), MIMEType.JSON);
+    }
+
+    /**
+     * Respond to the request with a json data.
+     * @param builder response json builder
+     */
+    @Override
+    public void send(JsonBuilder builder) throws IOException {
+        send(builder.build().toString(), MIMEType.JSON);
+    }
+
+    /**
+     * Respond to the request with a file content.
+     * @param file target file
+     * @throws IOException error whilst sending
+     */
+    @Override
+    public void sendFile(File file) throws IOException {
+        // get the input stream of the asset file
+        try (InputStream stream = new FileInputStream(file)) {
+            // load the content of the file
+            byte[] bytes = ByteStreams.toByteArray(stream);
+            // get the extension of the file
+            String name = file.getName();
+            String extension = name.substring(name.lastIndexOf('.'));
+            // send the file content to the client
+            send(bytes, MIMEType.fromExtensionOrDefault(extension, MIMEType.PLAIN_TEXT));
+        }
+    }
+
+    /**
+     * Respond to the request with a file content.
+     * @param path target file path
+     * @throws IOException error whilst sending
+     */
+    public void sendFile(String path) throws IOException {
+        sendFile(new File(path));
     }
 
     /**
