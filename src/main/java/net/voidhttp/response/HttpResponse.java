@@ -16,6 +16,7 @@ import net.voidhttp.util.json.JsonBuilder;
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Date;
 
 /**
@@ -149,7 +150,7 @@ public class HttpResponse implements Response {
     @Override
     public void sendFile(File file) throws IOException {
         // get the input stream of the asset file
-        try (InputStream stream = new FileInputStream(file)) {
+        try (InputStream stream = Files.newInputStream(file.toPath())) {
             // load the content of the file
             byte[] bytes = ByteStreams.toByteArray(stream);
             // get the extension of the file
@@ -165,8 +166,24 @@ public class HttpResponse implements Response {
      * @param path target file path
      * @throws IOException error whilst sending
      */
+    @Override
     public void sendFile(String path) throws IOException {
         sendFile(new File(path));
+    }
+
+    /**
+     * Respond to the request with an error.
+     * @param error target error
+     * @throws IOException error whilst sending
+     */
+    @Override
+    public void sendError(Throwable error) throws IOException {
+        // capture the stack trace to a string writer
+        StringWriter writer = new StringWriter();
+        PrintWriter printer = new PrintWriter(writer);
+        error.printStackTrace(printer);
+        // send the error log wrapped with a <pre> tag
+        status(400).send("<pre>" + writer.toString() +  "</pre>");
     }
 
     /**
@@ -250,5 +267,12 @@ public class HttpResponse implements Response {
     @Override
     public Cookies cookies() {
         return cookies;
+    }
+
+    /**
+     * Get the server that handles the http response.
+     */
+    public HttpServer getServer() {
+        return server;
     }
 }

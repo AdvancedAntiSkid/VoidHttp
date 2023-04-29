@@ -1,4 +1,4 @@
-package net.voidhttp.handler;
+package net.voidhttp.router;
 
 import net.voidhttp.HttpServer;
 import net.voidhttp.request.Method;
@@ -42,13 +42,13 @@ public class Blueprint {
      * Register a handler for the given request method.
      * @param method request method
      * @param route request route
-     * @param handlers request handlers
+     * @param middlewares request handlers
      */
-    public Blueprint register(Method method, String route, Handler... handlers) {
+    public Blueprint register(Method method, String route, Middleware... middlewares) {
         // get the registered routes for the method
         List<Route> routes = routeMap.getOrDefault(method, new ArrayList<>());
         // register the handlers
-        routes.add(new Route(route, handlers));
+        routes.add(new Route(route, middlewares));
         // update the routes
         routeMap.put(method, routes);
         return this;
@@ -57,24 +57,24 @@ public class Blueprint {
     /**
      * Register a GET request handler.
      * @param route request route
-     * @param handlers request handlers
+     * @param middlewares request handlers
      */
-    public Blueprint get(String route, Handler... handlers) {
-        return register(Method.GET, route, handlers);
+    public Blueprint get(String route, Middleware... middlewares) {
+        return register(Method.GET, route, middlewares);
     }
 
     /**
      * Register a POST request handler.
      * @param route request route
-     * @param handlers request handler
+     * @param middlewares request handler
      */
-    public Blueprint post(String route, Handler... handlers) {
-        return register(Method.POST, route, handlers);
+    public Blueprint post(String route, Middleware... middlewares) {
+        return register(Method.POST, route, middlewares);
     }
 
     /**
-     * Setup the blueprint for the server.
-     * @param server server to setup to
+     * Set up the blueprint for the server.
+     * @param server server to set up to
      */
     public void setup(HttpServer server) {
         // loop through the registered HTTP methods

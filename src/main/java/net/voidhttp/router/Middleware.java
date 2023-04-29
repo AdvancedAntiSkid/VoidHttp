@@ -1,16 +1,13 @@
-package net.voidhttp.handler;
+package net.voidhttp.router;
 
 import net.voidhttp.request.Request;
 import net.voidhttp.response.Response;
-import net.voidhttp.util.asset.Asset;
-import net.voidhttp.util.asset.MIMEType;
-import net.voidhttp.util.asset.Resource;
 
 /**
- * Represents a HTTP middleware that attached to a route and
+ * Represents an HTTP middleware that attached to a route and
  * is called when the route passes the url test.
  */
-public interface Handler {
+public interface Middleware {
     /**
      * Handle the incoming HTTP request.
      * @param req client request

@@ -67,6 +67,13 @@ public interface Response {
     void sendFile(String path) throws IOException;
 
     /**
+     * Respond to the request with an error.
+     * @param error target error
+     * @throws IOException error whilst sending
+     */
+    void sendError(Throwable error) throws IOException;
+
+    /**
      * Respond to the request with a template.
      * @param template server template
      * @param placeholders template placeholders

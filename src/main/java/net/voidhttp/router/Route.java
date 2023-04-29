@@ -1,10 +1,14 @@
-package net.voidhttp.handler;
+package net.voidhttp.router;
 
+import net.voidhttp.config.Flag;
+import net.voidhttp.request.HttpRequest;
 import net.voidhttp.request.Request;
 import net.voidhttp.request.query.Query;
 import net.voidhttp.request.query.RequestQuery;
+import net.voidhttp.response.HttpResponse;
 import net.voidhttp.response.Response;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,16 +25,16 @@ public class Route {
     /**
      * The array of request handlers.
      */
-    private final Handler[] handlers;
+    private final Middleware[] middlewares;
 
     /**
      * Initialize request route.
      * @param route route url
-     * @param handlers request handlers
+     * @param middlewares request handlers
      */
-    public Route(String route, Handler[] handlers) {
+    public Route(String route, Middleware[] middlewares) {
         this.route = route;
-        this.handlers = handlers;
+        this.middlewares = middlewares;
     }
 
     /**
@@ -38,7 +42,7 @@ public class Route {
      * @param url request url
      * @return true if the url passed the test
      */
-    public boolean test(String url, Query query) {
+    public boolean test(String url, RequestQuery query) {
         // the registry of the url query
         Map<String, String> queryData = new HashMap<>();
         // split up url between the '/' chars
@@ -65,9 +69,8 @@ public class Route {
                 return false;
         }
         // apply query data
-        RequestQuery requestQuery = (RequestQuery) query;
         for (Map.Entry<String, String> entry : queryData.entrySet())
-            requestQuery.set(entry.getKey(), entry.getValue());
+            query.set(entry.getKey(), entry.getValue());
         // url passed the test
         return true;
     }
@@ -79,18 +82,27 @@ public class Route {
      */
     public void handle(Request request, Response response) {
         // loop through the registered request handlers
-        for (Handler handler : handlers) {
+        for (Middleware middleware : middlewares) {
             try {
                 // handle the HTTP request
-                handler.handle(request, response);
+                middleware.handle(request, response);
                 // stop handling if the handler did not respond to the request
                 if (!request.passed())
                     return;
             }
             // handle an exception occurred whilst handling the HTTP request
             catch (Exception e) {
-                // TODO send an error response
-                e.printStackTrace();
+                try {
+                    // check if no stack trace should be sent
+                    if (((HttpResponse) response).getServer().hasFlag(Flag.NO_STACK_TRACE)) {
+                        response.status(400).send("");
+                        return;
+                    }
+                    // send the stack trace to the client
+                    response.sendError(e);
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
             }
         }
     }
@@ -105,7 +117,7 @@ public class Route {
     /**
      * The array of request handlers.
      */
-    public Handler[] getHandlers() {
-        return handlers;
+    public Middleware[] getHandlers() {
+        return middlewares;
     }
 }

@@ -1,48 +1,33 @@
 package net.voidhttp;
 
 import net.voidhttp.config.Flag;
-import net.voidhttp.handler.Handler;
-import net.voidhttp.handler.Route;
-import net.voidhttp.request.query.Query;
-import net.voidhttp.request.query.RequestQuery;
 import net.voidhttp.request.HttpRequest;
-import net.voidhttp.request.Method;
+import net.voidhttp.request.query.RequestQuery;
 import net.voidhttp.response.HttpResponse;
+import net.voidhttp.router.Context;
+import net.voidhttp.router.Middleware;
+import net.voidhttp.request.Method;
+import net.voidhttp.router.Route;
+import net.voidhttp.router.Router;
 import net.voidhttp.util.threading.Threading;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.*;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Represents an advanced multi-threaded HTTP server.
+ * Represents an advanced multithreaded HTTP server.
  */
 public class HttpServer {
     /**
-     * The map of the registered HTTP routes.
+     * The per-method routes' handler of the server.
      */
-    private final Map<Method, List<Route>> routeMap = new HashMap<>();
+    private final Router router = new Router(this);
 
     /**
-     * The map of the registered error routes.
-     */
-    private final Map<Integer, List<Route>> errorMap = new HashMap<>();
-
-    /**
-     * The list of the globally used handlers.
-     */
-    private final List<Handler> handlerList = new ArrayList<>();
-
-    /**
-     * The increment-based thread name indicator.
-     */
-    private final AtomicInteger threadId = new AtomicInteger(1);
-
-    /**
-     * Determines if the server is running.
+     * Determine if the server is running.
      */
     private volatile boolean running;
 
@@ -55,57 +40,49 @@ public class HttpServer {
      * Register a handler for the given request method.
      * @param method request method
      * @param route request route
-     * @param handlers request handlers
+     * @param middlewares request handlers
      */
-    public HttpServer register(Method method, String route, Handler... handlers) {
-        // get the registered routes for the method
-        List<Route> routes = routeMap.getOrDefault(method, new ArrayList<>());
-        // register the handlers
-        routes.add(new Route(route, handlers));
-        // update the routes
-        routeMap.put(method, routes);
+    public HttpServer register(Method method, String route, Middleware... middlewares) {
+        router.register(method, route, middlewares);
         return this;
     }
 
     /**
      * Register a GET request handler.
      * @param route request route
-     * @param handlers request handlers
+     * @param middlewares request handlers
      */
-    public HttpServer get(String route, Handler... handlers) {
-        return register(Method.GET, route, handlers);
+    public HttpServer get(String route, Middleware... middlewares) {
+        router.register(Method.GET, route, middlewares);
+        return this;
     }
 
     /**
      * Register a POST request handler.
      * @param route request route
-     * @param handlers request handler
+     * @param middlewares request handler
      */
-    public HttpServer post(String route, Handler... handlers) {
-        return register(Method.POST, route, handlers);
+    public HttpServer post(String route, Middleware... middlewares) {
+        router.register(Method.POST, route, middlewares);
+        return this;
     }
 
     /**
      * Register a request error handler.
      * @param code error code
-     * @param handlers error handlers
+     * @param middlewares error handlers
      */
-    public HttpServer error(int code, Handler... handlers) {
-        // get the registered routes for the error code
-        List<Route> routes = errorMap.getOrDefault(code, new ArrayList<>());
-        // register the handlers
-        routes.add(new Route("", handlers));
-        // update the routes
-        errorMap.put(code, routes);
+    public HttpServer error(int code, Middleware... middlewares) {
+        router.error(code, middlewares);
         return this;
     }
 
     /**
      * Register a global request handler.
-     * @param handlers global handlers
+     * @param middlewares global handlers
      */
-    public HttpServer use(Handler... handlers) {
-        handlerList.addAll(Arrays.asList(handlers));
+    public HttpServer use(Middleware... middlewares) {
+        router.use(middlewares);
         return this;
     }
 
@@ -135,7 +112,7 @@ public class HttpServer {
      * @return true if the flag is enabled
      */
     public boolean hasFlag(Flag flag) {
-        return (this.flags & flag.getId()) > 0;
+        return (flags & flag.getId()) > 0;
     }
 
     /**
@@ -148,39 +125,45 @@ public class HttpServer {
         // check if the server is already running
         if (running)
             throw new IllegalStateException("Server is already running");
-        // create socket server
-        ServerSocket server = new ServerSocket(port);
-        running = true;
-        // notify startup actions
-        for (Runnable action : actions)
-            action.run();
-        // start listening for requests
-        while (running) {
-            // accept client connection
-            Socket socket = server.accept();
-            // create a new thread for handling the request
-            ExecutorService executor = Threading.create("request-thread-" + threadId.getAndIncrement());
-            executor.execute(() -> {
-                // create request and response
-                HttpRequest request = new HttpRequest(socket);
-                HttpResponse response = new HttpResponse(this, socket);
-                // open the request
-                request.open(((method, url) -> {
-                    // handle the parsed request
-                    try {
-                        handleRequest(request, response);
-                    } catch (Exception e) {
-                        // TODO handleError(err code, stack trace)
-                        e.printStackTrace();
-                    }
-                }));
-                // executing has ended, shutdown the executor
-                Threading.terminate(executor);
-            });
+        // create a new server socket
+        try (ServerSocket server = new ServerSocket(port)) {
+            running = true;
+            // notify startup actions
+            for (Runnable action : actions)
+                action.run();
+            // start listening for requests
+            while (running) {
+                // accept the next client connection
+                // block whilst a new client connects
+                acceptConnection(server.accept());
+            }
         }
-        // close the socket server
-        server.close();
         System.out.println("[VoidHttp] Server shut down.");
+    }
+
+    /**
+     * Accept the next client socket connection.
+     * @param socket connecting client
+     */
+    private void acceptConnection(Socket socket) {
+        // create a new thread for handling the request
+        ExecutorService executor = Threading.createWithId("request-thread-$code");
+        executor.execute(() -> {
+            // create the request and the response
+            HttpRequest request = new HttpRequest(socket);
+            HttpResponse response = new HttpResponse(this, socket);
+            // open the request
+            request.open(((method, url) -> {
+                // create the execution context wrapper
+                Context context = new Context(request, response, method, url);
+                // handle the parsed request
+                try {
+                    handleRequest(context);
+                } catch (Exception e) {
+                    router.handleError(context, e);
+                }
+            }));
+        });
     }
 
     /**
@@ -204,41 +187,23 @@ public class HttpServer {
 
     /**
      * Handle the incoming parsed request.
-     * @param request client request
-     * @param response server response
+     * @param context http request execution context
      * @throws Exception error whilst processing
      */
-    private void handleRequest(HttpRequest request, HttpResponse response) throws Exception {
+    private void handleRequest(Context context) throws Exception {
+        // extract the request and response of the context
+        HttpRequest request = context.getRequest();
+        HttpResponse response = context.getResponse();
         // get the necessary request data
         Method method = request.method();
         String url = request.route();
-        // handle globally used middlewares
-        // this is must be done before handling the method handlers
-        for (Handler handler : handlerList) {
-            try {
-                // make the global handler handle the request
-                handler.handle(request, response);
-                // stop processing if the handler did not pass the handling
-                if (!request.passed())
-                    return;
-                request.reset();
-            }
-            // handle an occurred error happened whilst
-            // processing global middleware
-            catch (Exception e) {
-                response.send("error");
-                // TODO send track trace
-                e.printStackTrace();
-                return;
-            }
-        }
+        // preprocess the router middlewares
+        router.preprocess(context);
         // get the list of routes corresponding for the method
-        List<Route> routes = routeMap.get(method);
+        List<Route> routes = router.getRoutes(method);
         // check if there aren't any handlers for the method
         if (routes == null || routes.isEmpty()) {
-            // TODO add custom 404 handler here as well
-            // TODO replace this with handleStatus(404)
-            response.status(404).send("<pre>" + "Cannot " + method + " " + url + "</pre>");
+            router.handleNotFound(context);
             return;
         }
         // declare a variable for determining if the request was handled or not
@@ -247,42 +212,23 @@ public class HttpServer {
         // handle the routes registered for the method
         for (Route route : routes) {
             // continue if the route did not pass the test
-            Query query = new RequestQuery();
+            RequestQuery query = new RequestQuery();
             if (!route.test(url, query))
                 continue;
             // handle the request
             request.setQuery(query);
             route.handle(request, response);
-            handled = true;
             // stop processing if the handler did not pass the handling
             if (!request.passed())
                 return;
+            // mark the request as handled and reset the request state
+            handled = true;
             request.reset();
         }
         // check for 404 error handlers that will override
-        // the default "not found" handler
-        // TODO replace this with handleStatus(404)
+        // this is the default "not found" handler
         if (!handled) {
-            // get the 404 handlers
-            List<Route> errorRoutes = errorMap.get(404);
-            // check if there are any of them
-            if (errorRoutes != null) {
-                // loop through the error handlers
-                for (Route route : errorRoutes) {
-                    route.handle(request, response);
-                    // handle the 404 error
-                    handled = true;
-                    // stop processing if the handler did not pass the handling
-                    if (!request.passed())
-                        return;
-                    request.reset();
-                }
-            }
-        }
-        // check if the request was not handled and there
-        // weren't any 404 handlers
-        if (!handled) {
-            response.status(404).send("<pre>" + "Cannot " + method + " " + url + "</pre>");
+            router.handleNotFound(context);
         }
     }
 
