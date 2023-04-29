@@ -5,7 +5,9 @@ import net.voidhttp.header.Headers;
 import net.voidhttp.response.cookie.Cookies;
 import net.voidhttp.util.asset.MIMEType;
 import net.voidhttp.util.Placeholder;
+import net.voidhttp.util.json.JsonBuilder;
 
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -43,6 +45,26 @@ public interface Response {
      * @param json response json
      */
     void send(JsonObject json) throws IOException;
+
+    /**
+     * Respond to the request with a json data.
+     * @param builder response json builder
+     */
+    void send(JsonBuilder builder) throws IOException;
+
+    /**
+     * Respond to the request with a file content.
+     * @param file target file
+     * @throws IOException error whilst sending
+     */
+    void sendFile(File file) throws IOException;
+
+    /**
+     * Respond to the request with a file content.
+     * @param path target file path
+     * @throws IOException error whilst sending
+     */
+    void sendFile(String path) throws IOException;
 
     /**
      * Respond to the request with a template.

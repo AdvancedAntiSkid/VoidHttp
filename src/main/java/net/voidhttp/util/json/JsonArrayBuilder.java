@@ -1,6 +1,8 @@
 package net.voidhttp.util.json;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonPrimitive;
 
 public class JsonArrayBuilder {
     private final JsonArray json;
@@ -41,6 +43,11 @@ public class JsonArrayBuilder {
 
     public JsonArrayBuilder push(JsonArrayBuilder value) {
         json.add(value.build());
+        return this;
+    }
+
+    public JsonArrayBuilder push(Object value) {
+        json.add(value != null ? new JsonPrimitive(String.valueOf(value)) : JsonNull.INSTANCE);
         return this;
     }
 

@@ -7,40 +7,37 @@ import com.google.gson.JsonObject;
  * Represents a JsonObject building utility.
  */
 public class JsonBuilder {
-    private final JsonObject json;
+    private final JsonObject json = new JsonObject();
 
     public JsonBuilder() {
-        json = new JsonObject();
     }
 
     public JsonBuilder(String key, Number value) {
-        json = new JsonObject();
         json.addProperty(key, value);
     }
 
     public JsonBuilder(String key, String value) {
-        json = new JsonObject();
         json.addProperty(key, value);
     }
 
     public JsonBuilder(String key, Boolean value) {
-        json = new JsonObject();
         json.addProperty(key, value);
     }
 
     public JsonBuilder(String key, Character value) {
-        json = new JsonObject();
         json.addProperty(key, value);
     }
 
     public JsonBuilder(String key, JsonBuilder value) {
-        json = new JsonObject();
         json.add(key, value.build());
     }
 
     public JsonBuilder(String key, JsonElement value) {
-        json = new JsonObject();
         json.add(key, value);
+    }
+
+    public JsonBuilder(String key, Object value) {
+        json.addProperty(key, value != null ? String.valueOf(value) : null);
     }
 
     public JsonBuilder set(String key, Number value) {
@@ -75,6 +72,11 @@ public class JsonBuilder {
 
     public JsonBuilder set(String key, JsonElement value) {
         json.add(key, value);
+        return this;
+    }
+
+    public JsonBuilder set(String key, Object value) {
+        json.addProperty(key, value != null ? String.valueOf(value) : null);
         return this;
     }
 
