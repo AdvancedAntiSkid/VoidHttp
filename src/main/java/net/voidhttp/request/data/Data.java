@@ -29,6 +29,25 @@ public interface Data {
     <T> T get(String key);
 
     /**
+     * Get a T value from the data registry.
+     * @param key data key
+     * @param type data type class
+     * @param defaultValue value to return if the key is unregistered
+     * @param <T> data type
+     * @return data value
+     */
+    <T> T get(String key, Class<T> type, T defaultValue);
+
+    /**
+     * Get a T value from the data registry.
+     * @param key data key
+     * @param type data type class
+     * @param <T> data type
+     * @return data value
+     */
+    <T> T get(String key, Class<T> type);
+
+    /**
      * Get an object value from the data registry.
      * @param key data key
      * @param defaultValue value to return if the key is unregistered

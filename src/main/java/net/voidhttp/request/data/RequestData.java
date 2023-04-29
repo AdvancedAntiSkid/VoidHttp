@@ -48,6 +48,31 @@ public class RequestData implements Data {
     }
 
     /**
+     * Get a T value from the data registry.
+     * @param key data key
+     * @param type data type class
+     * @param defaultValue value to return if the key is unregistered
+     * @param <T> data type
+     * @return data value
+     */
+    @Override
+    public <T> T get(String key, Class<T> type, T defaultValue) {
+        return type.cast(registry.getOrDefault(key, defaultValue));
+    }
+
+    /**
+     * Get a T value from the data registry.
+     * @param key data key
+     * @param type data type class
+     * @param <T> data type
+     * @return data value
+     */
+    @Override
+    public <T> T get(String key, Class<T> type) {
+        return get(key, type, null);
+    }
+
+    /**
      * Get an object value from the data registry.
      * @param key data key
      * @param defaultValue value to return if the key is unregistered
