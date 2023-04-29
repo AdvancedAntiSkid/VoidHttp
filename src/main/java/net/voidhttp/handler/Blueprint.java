@@ -28,6 +28,14 @@ public class Blueprint {
      */
     public Blueprint(String prefix) {
         this.prefix = prefix;
+        // do initialization in a separate method
+        initialize();
+    }
+
+    /**
+     * Initialize blueprint routes.
+     */
+    protected void initialize() {
     }
 
     /**
