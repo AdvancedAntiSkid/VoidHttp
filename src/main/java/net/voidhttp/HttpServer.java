@@ -9,6 +9,7 @@ import net.voidhttp.router.Middleware;
 import net.voidhttp.request.Method;
 import net.voidhttp.router.Route;
 import net.voidhttp.router.Router;
+import net.voidhttp.util.console.Logger;
 import net.voidhttp.util.threading.Threading;
 
 import java.io.IOException;
@@ -119,9 +120,8 @@ public class HttpServer {
      * Start the HTTP server and begin listening for requests.
      * @param port server port
      * @param actions server startup handlers
-     * @throws IOException error whilst starting up
      */
-    public void listen(int port, Runnable... actions) throws IOException {
+    public void listen(int port, Runnable... actions) {
         // check if the server is already running
         if (running)
             throw new IllegalStateException("Server is already running");
@@ -137,6 +137,9 @@ public class HttpServer {
                 // block whilst a new client connects
                 acceptConnection(server.accept());
             }
+        } catch (IOException e) {
+            Logger.error("Error whilst trying to start webserver.");
+            e.printStackTrace();
         }
         System.out.println("[VoidHttp] Server shut down.");
     }
@@ -174,14 +177,10 @@ public class HttpServer {
     public void listenAsync(int port, Runnable... actions) {
         ExecutorService executor = Threading.create("listener-thread");
         executor.execute(() -> {
-            try {
-                // start the webserver and block this thread until shutdown
-                listen(port, actions);
-                // server has stopped, terminate the executor
-                Threading.terminate(executor);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            // start the webserver and block this thread until shutdown
+            listen(port, actions);
+            // server has stopped, terminate the executor
+            Threading.terminate(executor);
         });
     }
 
@@ -227,9 +226,8 @@ public class HttpServer {
         }
         // check for 404 error handlers that will override
         // this is the default "not found" handler
-        if (!handled) {
+        if (!handled)
             router.handleNotFound(context);
-        }
     }
 
     /**
