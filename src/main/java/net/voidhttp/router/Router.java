@@ -115,6 +115,9 @@ public class Router {
         // extract the request and response of the context
         HttpRequest request = context.getRequest();
         HttpResponse response = context.getResponse();
+        // do not handle request, if the socket is already closed
+        if (request.getSocket().isClosed())
+            return;
         // get the code 404 handlers
         boolean handled = false;
         List<Route> errorRoutes = errorMap.get(404);
