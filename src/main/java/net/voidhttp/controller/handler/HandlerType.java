@@ -4,7 +4,6 @@ public enum HandlerType {
     BODY,
     JSON,
     TEXT,
-    DTO,
     REQUEST,
     RESPONSE,
     NONE,
