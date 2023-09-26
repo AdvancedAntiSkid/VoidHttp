@@ -1,15 +1,16 @@
 import com.google.gson.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
+import lombok.ToString;
 import net.voidhttp.HttpServer;
+import net.voidhttp.controller.dto.Dto;
 import net.voidhttp.controller.handler.*;
 import net.voidhttp.controller.route.Controller;
-import net.voidhttp.controller.route.Get;
 import net.voidhttp.controller.route.Post;
 import net.voidhttp.request.HttpRequest;
 import net.voidhttp.request.Method;
 import net.voidhttp.response.HttpResponse;
-import net.voidhttp.router.Middleware;
 import net.voidhttp.util.asset.MIMEType;
 
 import java.io.BufferedReader;
@@ -17,7 +18,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -32,17 +32,31 @@ public class ControllerTest {
 
         server.listenAsync(80, () -> System.out.println("Listening on port 80"));
 
-        String response = postJson("auth/login?x=100", "{\"username\":\"test\",\"password\":\"test\"}");
+        String response = postJson("auth/login?x=100", "{\"username\":\"admin\",\"password\":\"123\"}");
         System.out.println(response);
+    }
+
+    @Dto
+    @Getter
+    @ToString
+    public static class LoginRequest {
+        private String username;
+        private String password;
+    }
+
+    @AllArgsConstructor
+    @ToString
+    public static class LoginResponse {
+        private boolean success;
+        private String message;
     }
 
     @Controller("auth")
     public static class TestController {
         @Post("login")
-        public String login(@Text String body, @Req HttpRequest req) {
-            System.out.println("body: " + body);
-            System.out.println("x: " + req.parameters().get("x"));
-            return "Returned a string";
+        public LoginResponse login(@Body LoginRequest data) {
+            System.out.println("login " + data);
+            return new LoginResponse(true, "success");
         }
     }
 
@@ -122,6 +136,12 @@ public class ControllerTest {
                     parameters.add(new ParameterHandler(HandlerType.RESPONSE, type));
                 }
 
+                else if (annotation.annotationType() == Body.class) {
+                    if (!type.isAnnotationPresent(Dto.class))
+                        throw new IllegalArgumentException("Handler annotated with @Body must be a DTO");
+                    parameters.add(new ParameterHandler(HandlerType.BODY, type));
+                }
+
                 else
                     throw new IllegalArgumentException("Unrecognized parameter type " + type);
             }
@@ -144,6 +164,9 @@ public class ControllerTest {
                     else if (parameter.type == HandlerType.RESPONSE)
                         args[i] = response;
 
+                    else if (parameter.type == HandlerType.BODY)
+                        args[i] = gson.fromJson(request.body(), parameter.clazz);
+
                     else
                         args[i] = null;
                 }
@@ -153,6 +176,10 @@ public class ControllerTest {
                     response.send(String.valueOf(result), MIMEType.JSON);
                 else if (JsonObject.class.isAssignableFrom(returnType))
                     response.send(result.toString(), MIMEType.JSON);
+                else if (returnType.isAnnotationPresent(Dto.class))
+                    response.send(gson.toJson(result), MIMEType.JSON);
+                else
+                    response.send(String.valueOf(result), MIMEType.JSON);
             });
         }
     }
