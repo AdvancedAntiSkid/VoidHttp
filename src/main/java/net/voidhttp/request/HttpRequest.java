@@ -2,6 +2,7 @@ package net.voidhttp.request;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import lombok.Getter;
 import net.voidhttp.header.Header;
 import net.voidhttp.header.Headers;
 import net.voidhttp.header.HttpHeaders;
@@ -32,6 +33,7 @@ public class HttpRequest implements Request {
     /**
      * The connecting client socket.
      */
+    @Getter
     private final Socket socket;
 
     /**
@@ -323,10 +325,4 @@ public class HttpRequest implements Request {
         this.session = session;
     }
 
-    /**
-     * Get the connecting client socket.
-     */
-    public Socket getSocket() {
-        return socket;
-    }
 }

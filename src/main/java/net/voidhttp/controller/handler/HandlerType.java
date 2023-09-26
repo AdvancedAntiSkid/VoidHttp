@@ -6,5 +6,11 @@ public enum HandlerType {
     TEXT,
     REQUEST,
     RESPONSE,
+    PARAMS,
+    QUERY,
+    HEADERS,
+    COOKIES,
+    SESSION,
+    DATA,
     NONE,
 }

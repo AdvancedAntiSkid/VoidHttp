@@ -10,6 +10,7 @@ import net.voidhttp.controller.route.Controller;
 import net.voidhttp.controller.route.Post;
 import net.voidhttp.request.HttpRequest;
 import net.voidhttp.request.Method;
+import net.voidhttp.request.parameter.Parameters;
 import net.voidhttp.response.HttpResponse;
 import net.voidhttp.util.asset.MIMEType;
 
@@ -142,6 +143,42 @@ public class ControllerTest {
                     parameters.add(new ParameterHandler(HandlerType.BODY, type));
                 }
 
+                else if (annotation.annotationType() == Params.class) {
+                    if (!Parameters.class.isAssignableFrom(type))
+                        throw new IllegalArgumentException("Handler annotated with @Params must be a Parameters");
+                    parameters.add(new ParameterHandler(HandlerType.PARAMS, type));
+                }
+
+                else if (annotation.annotationType() == Query.class) {
+                    if (!net.voidhttp.request.query.Query.class.isAssignableFrom(type))
+                        throw new IllegalArgumentException("Handler annotated with @Query must be a Query");
+                    parameters.add(new ParameterHandler(HandlerType.QUERY, type));
+                }
+
+                else if (annotation.annotationType() == Headers.class) {
+                    if (net.voidhttp.header.Headers.class.isAssignableFrom(type))
+                        throw new IllegalArgumentException("Handler annotated with @Headers must be a Headers");
+                    parameters.add(new ParameterHandler(HandlerType.HEADERS, type));
+                }
+
+                else if (annotation.annotationType() == Cookies.class) {
+                    if (!net.voidhttp.request.cookie.Cookies.class.isAssignableFrom(type))
+                        throw new IllegalArgumentException("Handler annotated with @Cookies must be a Cookies");
+                    parameters.add(new ParameterHandler(HandlerType.COOKIES, type));
+                }
+
+                else if (annotation.annotationType() == Session.class) {
+                    if (!net.voidhttp.request.session.Session.class.isAssignableFrom(type))
+                        throw new IllegalArgumentException("Handler annotated with @Session must be a Session");
+                    parameters.add(new ParameterHandler(HandlerType.SESSION, type));
+                }
+
+                else if (annotation.annotationType() == Data.class) {
+                    if (!net.voidhttp.request.data.Data.class.isAssignableFrom(type))
+                        throw new IllegalArgumentException("Handler annotated with @Data must be a Data");
+                    parameters.add(new ParameterHandler(HandlerType.SESSION, type));
+                }
+
                 else
                     throw new IllegalArgumentException("Unrecognized parameter type " + type);
             }
@@ -167,6 +204,24 @@ public class ControllerTest {
                     else if (parameter.type == HandlerType.BODY)
                         args[i] = gson.fromJson(request.body(), parameter.clazz);
 
+                    else if (parameter.type == HandlerType.PARAMS)
+                        args[i] = request.parameters();
+
+                    else if (parameter.type == HandlerType.QUERY)
+                        args[i] = request.query();
+
+                    else if (parameter.type == HandlerType.HEADERS)
+                        args[i] = request.headers();
+
+                    else if (parameter.type == HandlerType.COOKIES)
+                        args[i] = request.cookies();
+
+                    else if (parameter.type == HandlerType.SESSION)
+                        args[i] = request.session();
+
+                    else if (parameter.type == HandlerType.DATA)
+                        args[i] = request.data();
+
                     else
                         args[i] = null;
                 }
@@ -174,10 +229,13 @@ public class ControllerTest {
                 Object result = method.invoke(handler, args);
                 if (CharSequence.class.isAssignableFrom(returnType))
                     response.send(String.valueOf(result), MIMEType.JSON);
+
                 else if (JsonObject.class.isAssignableFrom(returnType))
                     response.send(result.toString(), MIMEType.JSON);
+
                 else if (returnType.isAnnotationPresent(Dto.class))
                     response.send(gson.toJson(result), MIMEType.JSON);
+                
                 else
                     response.send(String.valueOf(result), MIMEType.JSON);
             });
