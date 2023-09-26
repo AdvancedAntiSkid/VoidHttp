@@ -49,6 +49,46 @@ public final class Handlers {
     /**
      * Create a static folder handler.
      * @param folder static folder path
+     * @param prefix http route prefix
+     * @param cache cache asset content
+     */
+    public static Middleware staticFolder(String folder, String prefix, boolean cache) {
+        // create a new handler for the resource files
+        return (req, res) -> {
+            // get the requested url
+            String route = req.route();
+            // move to the next handler if the route is not an asset file request
+            if (!route.startsWith(prefix + "/")) {
+                req.next();
+                return;
+            }
+            // remove the prefix from the route
+            route = route.substring(prefix.length());
+            // split up url between every '/' char
+            String[] parts = route.split("/");
+            // get the last part of the url
+            String file = parts[parts.length - 1];
+            // split up filename and extension
+            parts = file.split("\\.");
+            // get file extension
+            String extension = "." + parts[parts.length - 1];
+            // get the MIME type of the file
+            MIMEType type = MIMEType.fromExtensionOrDefault(extension, MIMEType.PLAIN_TEXT);
+            // get the content of the asset file
+            String path = folder + route;
+            byte[] bytes = cache ? Asset.get(path) : Asset.load(path);
+            if (bytes == null) {
+                res.status(404).send("<pre>" + "Cannot " + req.method() + " " + req.route() + "</pre>");
+                return;
+            }
+            // send the content of the asset
+            res.send(bytes, type);
+        };
+    }
+
+    /**
+     * Create a static folder handler.
+     * @param folder static folder path
      */
     public static Middleware staticFolder(String folder) {
         return staticFolder(folder, false);

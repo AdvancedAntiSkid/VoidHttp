@@ -64,7 +64,7 @@ public enum Method {
      * @param name request method name
      * @return found request method
      */
-    public static Method get(String name) {
+    public static Method of(String name) {
         // convert the name to lowercase
         name = name.toLowerCase();
         // loop through the method values

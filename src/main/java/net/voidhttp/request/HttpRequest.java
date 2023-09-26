@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.StringTokenizer;
-import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
 
 /**
@@ -125,7 +124,7 @@ public class HttpRequest implements Request {
                 return;
             }
             // determine the request method
-            this.method = Method.get(tokenizer.nextToken().toUpperCase());
+            this.method = Method.of(tokenizer.nextToken().toUpperCase());
             // get the requested url
             // the route and parameters are separated using a question mark
             String[] url = tokenizer.nextToken().split("\\?");
@@ -322,5 +321,12 @@ public class HttpRequest implements Request {
     @Override
     public void setSession(Session session) {
         this.session = session;
+    }
+
+    /**
+     * Get the connecting client socket.
+     */
+    public Socket getSocket() {
+        return socket;
     }
 }
