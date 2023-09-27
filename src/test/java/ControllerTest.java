@@ -3,8 +3,7 @@ import lombok.Getter;
 import lombok.ToString;
 import net.voidhttp.HttpServer;
 import net.voidhttp.controller.ControllerInjector;
-import net.voidhttp.controller.dto.Dto;
-import net.voidhttp.controller.dto.Length;
+import net.voidhttp.controller.dto.*;
 import net.voidhttp.controller.handler.Body;
 import net.voidhttp.controller.route.Controller;
 import net.voidhttp.controller.route.Post;
@@ -27,7 +26,7 @@ public class ControllerTest {
         server.listenAsync(80, () -> System.out.println("Listening on port 80"));
 
         String endpoint = "auth/login?x=100";
-        String data = "{\"username\":\"admin\",\"password\":\"123\"}";
+        String data = "{\"username\":\"admin\",\"password\":\"S3curePa$$w0rd\"}";
         String response = postJson(endpoint, data);
 
         System.out.println(response);
@@ -37,8 +36,10 @@ public class ControllerTest {
     @Getter
     @ToString
     public static class LoginRequest {
-        @Length(min = 1, max = 2)
+        @Length(min = 1, max = 10)
         private String username;
+
+        @IsStrongPassword
         private String password;
     }
 

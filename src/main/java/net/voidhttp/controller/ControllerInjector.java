@@ -183,6 +183,20 @@ public class ControllerInjector {
                 if (!str.matches("^[a-zA-Z]*$"))
                     throw new IllegalArgumentException("Field " + field.getName() + " " + str + " is not alphabetic");
             }
+
+            // handle strong password string validation
+            else if (field.isAnnotationPresent(IsStrongPassword.class)) {
+                IsStrongPassword password = field.getAnnotation(IsStrongPassword.class);
+                String str = (String) field.get(value);
+                // check if a string is not a strong password
+                boolean tooShort = str.length() < password.minLength();
+                boolean tooFewNumbers = str.replaceAll("[^0-9]", "").length() < password.minNumbers();
+                boolean tooFewUppercase = str.replaceAll("[^A-Z]", "").length() < password.minUppercase();
+                boolean tooFewSymbols = str.replaceAll("[a-zA-Z0-9]", "").length() < password.minSymbols();
+                // check if the password is not strong enough
+                if (tooShort || tooFewNumbers || tooFewUppercase || tooFewSymbols)
+                    throw new IllegalArgumentException("Field " + field.getName() + " " + str + " is not a strong password");
+            }
         }
     }
 
