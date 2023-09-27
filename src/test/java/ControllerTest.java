@@ -4,6 +4,7 @@ import lombok.ToString;
 import net.voidhttp.HttpServer;
 import net.voidhttp.controller.ControllerInjector;
 import net.voidhttp.controller.dto.Dto;
+import net.voidhttp.controller.dto.Length;
 import net.voidhttp.controller.handler.Body;
 import net.voidhttp.controller.route.Controller;
 import net.voidhttp.controller.route.Post;
@@ -36,6 +37,7 @@ public class ControllerTest {
     @Getter
     @ToString
     public static class LoginRequest {
+        @Length(min = 1, max = 2)
         private String username;
         private String password;
     }
@@ -67,9 +69,8 @@ public class ControllerTest {
         StringBuilder response = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
             String line;
-            while ((line = reader.readLine()) != null) {
+            while ((line = reader.readLine()) != null)
                 response.append(line);
-            }
         }
         return response.toString();
     }
