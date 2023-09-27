@@ -45,6 +45,7 @@ public class ControllerTest {
         private String password;
     }
 
+    @Dto
     @AllArgsConstructor
     @ToString
     public static class LoginResponse {
@@ -57,6 +58,7 @@ public class ControllerTest {
         @Post("login")
         public LoginResponse login(@Body LoginRequest data) {
             System.out.println("login " + data);
+            // System.out.println("params " + params.get("x"));
             return new LoginResponse(true, "success");
         }
     }
@@ -235,9 +237,11 @@ public class ControllerTest {
 
                 else if (returnType.isAnnotationPresent(Dto.class))
                     response.send(gson.toJson(result), MIMEType.JSON);
-                
-                else
-                    response.send(String.valueOf(result), MIMEType.JSON);
+
+                else {
+                    System.err.println("Handler must return a CharSequence, JsonObject, or DTO");
+                    response.sendError(new IllegalArgumentException("Handler must return a CharSequence, JsonObject, or DTO"));
+                }
             });
         }
     }
