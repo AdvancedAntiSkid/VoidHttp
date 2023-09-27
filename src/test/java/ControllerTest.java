@@ -52,7 +52,7 @@ public class ControllerTest {
     public static class TestController {
         @Post("login")
         public LoginResponse login(@Body LoginRequest data) {
-            System.out.println("login " + data);
+            System.out.println("try login " + data);
             return new LoginResponse(true, "success");
         }
     }

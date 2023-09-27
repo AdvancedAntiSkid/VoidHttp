@@ -88,15 +88,17 @@ public class ControllerInjector {
         for (Annotation annotation : method.getDeclaredAnnotations()) {
             // check if the annotation is a http method annotation
             for (Class<?> type : METHOD_TYPES) {
-                if (annotation.annotationType().equals(type)) {
-                    // resolve the value of the annotation
-                    Method valueMethod = type.getDeclaredMethod("value");
-                    String invoke = (String) valueMethod.invoke(annotation);
+                // ignore the annotation if it is not a http method annotation
+                if (!annotation.annotationType().equals(type))
+                    continue;
 
-                    // resolve the http method from the annotation name
-                    String methodName = type.getSimpleName().toUpperCase();
-                    methods.add(new MethodMeta(net.voidhttp.request.Method.of(methodName), invoke));
-                }
+                // resolve the value of the annotation
+                Method valueMethod = type.getDeclaredMethod("value");
+                String invoke = (String) valueMethod.invoke(annotation);
+
+                // resolve the http method from the annotation name
+                String methodName = type.getSimpleName().toUpperCase();
+                methods.add(new MethodMeta(net.voidhttp.request.Method.of(methodName), invoke));
             }
         }
         return methods;
@@ -111,68 +113,66 @@ public class ControllerInjector {
      */
     private <T> Middleware createHook(Method method, List<ParameterMeta> metaList, T controller) {
         return (request, response) -> {
-            try {
-                // create an array to hold the resolved arguments for the method
-                Object[] args = new Object[metaList.size()];
+            // create an array to hold the resolved arguments for the method
+            Object[] args = new Object[metaList.size()];
 
-                // transform the request data to the method parameters
-                for (int i = 0; i < metaList.size(); i++) {
-                    ParameterMeta meta = metaList.get(i);
-                    // handle raw body text argument
-                    if (meta.getHandlerType() == HandlerType.TEXT)
-                        args[i] = request.body();
+            // transform the request data to the method parameters
+            for (int i = 0; i < metaList.size(); i++) {
+                ParameterMeta meta = metaList.get(i);
+                // handle raw body text argument
+                if (meta.getHandlerType() == HandlerType.TEXT)
+                    args[i] = request.body();
 
-                        // handle parsed json body argument
-                    else if (meta.getHandlerType() == HandlerType.JSON) {
-                        Object json = GSON.fromJson(request.body(), meta.getType());
-                        if (CharSequence.class.isAssignableFrom(meta.getType()))
-                            args[i] = json.toString();
-                        else
-                            args[i] = json;
-                    }
-
-                    // handle request context argument
-                    else if (meta.getHandlerType() == HandlerType.REQUEST)
-                        args[i] = request;
-
-                        // handle response context argument
-                    else if (meta.getHandlerType() == HandlerType.RESPONSE)
-                        args[i] = response;
-
-                        // handle data transform object argument
-                    else if (meta.getHandlerType() == HandlerType.BODY)
-                        args[i] = GSON.fromJson(request.body(), meta.getType());
-
-                        // handle request url parameters argument
-                    else if (meta.getHandlerType() == HandlerType.PARAMS)
-                        args[i] = request.parameters();
-
-                        // handle request query argument
-                    else if (meta.getHandlerType() == HandlerType.QUERY)
-                        args[i] = request.query();
-
-                        // handle request headers argument
-                    else if (meta.getHandlerType() == HandlerType.HEADERS)
-                        args[i] = request.headers();
-
-                        // handle request cookies argument
-                    else if (meta.getHandlerType() == HandlerType.COOKIES)
-                        args[i] = request.cookies();
-
-                        // handle request session argument
-                    else if (meta.getHandlerType() == HandlerType.SESSION)
-                        args[i] = request.session();
-
-                        // handle passed request data argument
-                    else if (meta.getHandlerType() == HandlerType.DATA)
-                        args[i] = request.data();
+                // handle parsed json body argument
+                else if (meta.getHandlerType() == HandlerType.JSON) {
+                    // validate the json syntax even if the parameter expects a CharSequence
+                    // this ensures that a valid JSON is passed to @Json annotated parameters
+                    Object json = GSON.fromJson(request.body(), meta.getType());
+                    if (CharSequence.class.isAssignableFrom(meta.getType()))
+                        args[i] = json.toString();
+                    else
+                        args[i] = json;
                 }
 
-                // invoke the route listener method
-                method.invoke(controller, args);
-            } catch (Exception e) {
-                e.printStackTrace();
+                // handle request context argument
+                else if (meta.getHandlerType() == HandlerType.REQUEST)
+                    args[i] = request;
+
+                    // handle response context argument
+                else if (meta.getHandlerType() == HandlerType.RESPONSE)
+                    args[i] = response;
+
+                    // handle data transform object argument
+                else if (meta.getHandlerType() == HandlerType.BODY)
+                    args[i] = GSON.fromJson(request.body(), meta.getType());
+
+                    // handle request url parameters argument
+                else if (meta.getHandlerType() == HandlerType.PARAMS)
+                    args[i] = request.parameters();
+
+                    // handle request query argument
+                else if (meta.getHandlerType() == HandlerType.QUERY)
+                    args[i] = request.query();
+
+                    // handle request headers argument
+                else if (meta.getHandlerType() == HandlerType.HEADERS)
+                    args[i] = request.headers();
+
+                    // handle request cookies argument
+                else if (meta.getHandlerType() == HandlerType.COOKIES)
+                    args[i] = request.cookies();
+
+                    // handle request session argument
+                else if (meta.getHandlerType() == HandlerType.SESSION)
+                    args[i] = request.session();
+
+                    // handle passed request data argument
+                else if (meta.getHandlerType() == HandlerType.DATA)
+                    args[i] = request.data();
             }
+
+            // invoke the route listener method using transformed arguments
+            method.invoke(controller, args);
         };
     }
 }

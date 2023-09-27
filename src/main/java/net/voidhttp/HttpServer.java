@@ -1,6 +1,7 @@
 package net.voidhttp;
 
 import net.voidhttp.config.Flag;
+import net.voidhttp.controller.ControllerInjector;
 import net.voidhttp.request.HttpRequest;
 import net.voidhttp.request.query.RequestQuery;
 import net.voidhttp.response.HttpResponse;
@@ -26,6 +27,11 @@ public class HttpServer {
      * The per-method routes' handler of the server.
      */
     private final Router router = new Router(this);
+
+    /**
+     * The route controller injector of the server.
+     */
+    private final ControllerInjector injector = new ControllerInjector();
 
     /**
      * Determine if the server is running.
@@ -84,6 +90,16 @@ public class HttpServer {
      */
     public HttpServer use(Middleware... middlewares) {
         router.use(middlewares);
+        return this;
+    }
+
+    /**
+     * Inject a http route controller into the server.
+     * @param controller controller to inject
+     * @param <T> type of the controller
+     */
+    public <T> HttpServer inject(T controller) {
+        injector.inject(this, controller);
         return this;
     }
 
