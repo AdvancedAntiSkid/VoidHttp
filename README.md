@@ -1,76 +1,132 @@
 # VoidHttp
-A simple multithread java http server using the express.js syntax.
+A simple multi-thread java webserver inspired by the syntax of Express.js and NestJS.
 
 # Examples
 
-## Webserver setup
+## Using the modern controller system
+
 ```java
-HttpServer server = new HttpServer();
+import net.voidhttp.controller.route.Controller;
+import net.voidhttp.controller.route.Get;
 
-/* routes */
-
-server.listen(80, () -> {
-    System.out.println("Server started");
-});
+@Controller("api")
+public class MyController {
+    @Get("hello")
+    public String sayHello() {
+        return "Hello, World!";
+    }
+}
 ```
 
-## A GET route
+## Using Data Transfer Objects
+
+```java
+import net.voidhttp.controller.dto.Dto;
+import net.voidhttp.controller.handler.Data;
+import net.voidhttp.controller.route.Controller;
+
+@Dto
+public class LoginRequest {
+    public String username;
+    public String password;
+}
+
+@Dto
+public class LoginResponse {
+    public boolean success;
+    public String token;
+}
+
+@Controller("user")
+public class MyController {
+    @Get("login")
+    public LoginResponse onLogin(@Data LoginRequest request) {
+        System.out.println(request.username + " has logged in!");
+        LoginResponse response = new LoginResponse();
+        response.success = true;
+        response.token = "abc-123-xyz";
+        return response;
+    }
+}
+```
+
+## Webserver setup
+
+```java
+import net.voidhttp.HttpServer;
+
+public class ExampleWebServer {
+    public static void main(String[] args) {
+        HttpServer server = new HttpServer();
+
+        /* set up routes */
+
+        server.listen(80, () -> {
+            System.out.println("Server started");
+        });
+    }
+}
+```
+
+## Using the classic route system
+
+### A GET route
 ```java
 server.get("/", (req, res) -> {
     res.send("Hello, World!");
 });
 ```
 
-## URL parameters
+### URL parameters
 ```java
 Parameters parameters = req.parameters();
 System.out.println("value: " + parameters.get("test"));
 ```
 
-## Header handling
+### Header handling
 ```java
 Headers headers = req.headers();
 System.out.println("user: " + headers.get("User-Agent"));
 ```
 
-## Static resource folders
+### Static resource folders
 ```java
 server.use(Handlers.staticFolder("/public"));
 ```
 
-## Global middlewares
+### Global middlewares
 ```java
 server.use((req, res) -> {
     System.out.println("global middleware");
 });
 ```
 
-## Error handling
+### Error handling
 ```java
 server.error(404, (req, res) -> {
     res.send("Page not found :c");
 });
 ```
 
-## Template rendering
+### Template rendering
 ```java
 res.render("MyTemplate", 
     new Placeholder("name", "John Doe"), 
     new Placeholder("balance", "100$"));
 ```
 
-## Redirects
+### Redirects
 ```java
 res.redirect("https://google.com", 5);
 res.redirect("https://youtube.com");
 ```
 
-## Receiving json
+### Receiving json
 ```java
 JsonObject json = req.json();
 ```
 
-## Sending json
+### Sending json
 ```java
 res.send(new JsonBuilder()
     .set("message", "Hello, World!")
@@ -78,18 +134,18 @@ res.send(new JsonBuilder()
     .build());
 ```
 
-## Response status
+### Response status
 ```java
 res.status(418).message("I'm a teapot");
 ```
 
-## Receiving cookies
+### Receiving cookies
 ```java
 Cookies cookies = res.cookies();
 System.out.println("secret: " + cookies.get("session-token"));
 ```
 
-## Sending cookies
+### Sending cookies
 ```java
 Cookie cookie = new Cookie("name", "value")
     .setMaxAge(10)

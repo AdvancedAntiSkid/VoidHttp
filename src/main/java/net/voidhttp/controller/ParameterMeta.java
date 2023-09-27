@@ -72,8 +72,8 @@ public class ParameterMeta {
             else if (annotation.annotationType() == Json.class) {
                 // the array of types that are accepted as a json parameter
                 Class<?>[] types = new Class[] {
-                        CharSequence.class, JsonObject.class, JsonArray.class,
-                        JsonPrimitive.class, JsonElement.class
+                    CharSequence.class, JsonObject.class, JsonArray.class,
+                    JsonPrimitive.class, JsonElement.class
                 };
 
                 // validate that the parameter is a valid json type
