@@ -14,17 +14,17 @@ public @interface IsStrongPassword {
     /**
      * Get the minimum length of the password.
      */
-    int minLength() default 8;
+    int minLength() default 0;
 
     /**
      * Get the minimum count of numbers in the password.
      */
-    int minNumbers() default 1;
+    int minNumbers() default 0;
 
     /**
      * Get the minimum count of lowercase letters in the password.
      */
-    int minUppercase() default 1;
+    int minUppercase() default 0;
 
     /**
      * Get the minimum count of uppercase letters in the password.

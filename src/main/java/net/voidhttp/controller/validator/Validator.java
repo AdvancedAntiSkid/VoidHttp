@@ -29,7 +29,7 @@ public class Validator {
             }
 
             // handle numeric value validation
-            else if (field.isAnnotationPresent(IsNumeric.class)) {
+            if (field.isAnnotationPresent(IsNumeric.class)) {
                 String str = (String) field.get(value);
                 // check if the string is not numeric
                 if (!str.matches("-?\\d+(\\.\\d+)?"))
@@ -37,7 +37,7 @@ public class Validator {
             }
 
             // handle value null pointer validation
-            else if (field.isAnnotationPresent(IsNotNull.class)) {
+            if (field.isAnnotationPresent(IsNotNull.class)) {
                 Object obj = field.get(value);
                 // check if the value is null
                 if (obj == null)
@@ -45,7 +45,7 @@ public class Validator {
             }
 
             // handle string emptiness validation
-            else if (field.isAnnotationPresent(IsNotEmpty.class)) {
+            if (field.isAnnotationPresent(IsNotEmpty.class)) {
                 String str = (String) field.get(value);
                 // check if the string is not empty
                 if (str.isEmpty())
@@ -53,7 +53,7 @@ public class Validator {
             }
 
             // handle email string validation
-            else if (field.isAnnotationPresent(IsEmail.class)) {
+            if (field.isAnnotationPresent(IsEmail.class)) {
                 String str = (String) field.get(value);
                 // check if the string is not a valid email
                 if (!str.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$"))
@@ -61,7 +61,7 @@ public class Validator {
             }
 
             // handle url string validation
-            else if (field.isAnnotationPresent(IsUrl.class)) {
+            if (field.isAnnotationPresent(IsUrl.class)) {
                 String str = (String) field.get(value);
                 // check if a string is not a valid url
                 if (!str.matches("^(http:\\/\\/www\\.|https:\\/\\/www\\.|http:\\/\\/|https:\\/\\/)?[a-z0-9]+([\\-\\.]{1}[a-z0-9]+)*\\.[a-z]{2,5}(:[0-9]{1,5})?(\\/.*)?$"))
@@ -69,7 +69,7 @@ public class Validator {
             }
 
             // handle alphanumeric string validation
-            else if (field.isAnnotationPresent(IsAlphanumeric.class)) {
+            if (field.isAnnotationPresent(IsAlphanumeric.class)) {
                 String str = (String) field.get(value);
                 // check if a string is not alphanumeric
                 if (!str.matches("^[a-zA-Z0-9]*$"))
@@ -77,7 +77,7 @@ public class Validator {
             }
 
             // handle alphabetic string validation
-            else if (field.isAnnotationPresent(IsAlphabetic.class)) {
+            if (field.isAnnotationPresent(IsAlphabetic.class)) {
                 String str = (String) field.get(value);
                 // check if a string is not alphabetic
                 if (!str.matches("^[a-zA-Z]*$"))
@@ -85,7 +85,7 @@ public class Validator {
             }
 
             // handle strong password string validation
-            else if (field.isAnnotationPresent(IsStrongPassword.class)) {
+            if (field.isAnnotationPresent(IsStrongPassword.class)) {
                 IsStrongPassword password = field.getAnnotation(IsStrongPassword.class);
                 String str = (String) field.get(value);
                 // check if a string is not a strong password
@@ -96,6 +96,15 @@ public class Validator {
                 // check if the password is not strong enough
                 if (tooShort || tooFewNumbers || tooFewUppercase || tooFewSymbols)
                     throw new IllegalArgumentException("Field " + field.getName() + " " + str + " is not a strong password");
+            }
+
+            // handle custom regex string validation
+            if (field.isAnnotationPresent(Matches.class)) {
+                Matches matches = field.getAnnotation(Matches.class);
+                String str = (String) field.get(value);
+                // check if a string does not match the regex
+                if (!str.matches(matches.value()))
+                    throw new IllegalArgumentException("Field " + field.getName() + " " + str + " does not match the regex " + matches.value());
             }
         }
     }

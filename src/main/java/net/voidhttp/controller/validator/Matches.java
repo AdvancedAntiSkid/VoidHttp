@@ -11,4 +11,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface Matches {
+    /**
+     * Get the regex pattern to match.
+     */
+    String value();
 }
