@@ -7,6 +7,8 @@ import net.voidhttp.controller.dto.*;
 import net.voidhttp.controller.handler.Body;
 import net.voidhttp.controller.route.Controller;
 import net.voidhttp.controller.route.Post;
+import net.voidhttp.controller.validator.IsStrongPassword;
+import net.voidhttp.controller.validator.Length;
 
 import java.io.BufferedReader;
 import java.io.IOException;

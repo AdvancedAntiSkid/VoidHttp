@@ -1,4 +1,4 @@
-package net.voidhttp.controller.dto;
+package net.voidhttp.controller.validator;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -6,11 +6,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Represents an annotation that validates that the length of a string is within a specified range.
+ * Represents an annotation that validates that a string is a valid email.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface Length {
-    int min() default 0;
-    int max() default Integer.MAX_VALUE;
+public @interface IsEmail {
 }
