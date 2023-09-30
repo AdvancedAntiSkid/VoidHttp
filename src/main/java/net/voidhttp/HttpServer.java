@@ -6,7 +6,7 @@ import net.voidhttp.request.HttpRequest;
 import net.voidhttp.request.query.RequestQuery;
 import net.voidhttp.response.HttpResponse;
 import net.voidhttp.router.Context;
-import net.voidhttp.router.Middleware;
+import net.voidhttp.router.MiddlewareHandler;
 import net.voidhttp.request.Method;
 import net.voidhttp.router.Route;
 import net.voidhttp.router.Router;
@@ -49,7 +49,7 @@ public class HttpServer {
      * @param route request route
      * @param middlewares request handlers
      */
-    public HttpServer register(Method method, String route, Middleware... middlewares) {
+    public HttpServer register(Method method, String route, MiddlewareHandler... middlewares) {
         router.register(method, route, middlewares);
         return this;
     }
@@ -59,7 +59,7 @@ public class HttpServer {
      * @param route request route
      * @param middlewares request handlers
      */
-    public HttpServer get(String route, Middleware... middlewares) {
+    public HttpServer get(String route, MiddlewareHandler... middlewares) {
         router.register(Method.GET, route, middlewares);
         return this;
     }
@@ -69,7 +69,7 @@ public class HttpServer {
      * @param route request route
      * @param middlewares request handler
      */
-    public HttpServer post(String route, Middleware... middlewares) {
+    public HttpServer post(String route, MiddlewareHandler... middlewares) {
         router.register(Method.POST, route, middlewares);
         return this;
     }
@@ -79,7 +79,7 @@ public class HttpServer {
      * @param code error code
      * @param middlewares error handlers
      */
-    public HttpServer error(int code, Middleware... middlewares) {
+    public HttpServer error(int code, MiddlewareHandler... middlewares) {
         router.error(code, middlewares);
         return this;
     }
@@ -88,7 +88,7 @@ public class HttpServer {
      * Register a global request handler.
      * @param middlewares global handlers
      */
-    public HttpServer use(Middleware... middlewares) {
+    public HttpServer use(MiddlewareHandler... middlewares) {
         router.use(middlewares);
         return this;
     }

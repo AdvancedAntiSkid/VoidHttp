@@ -1,6 +1,6 @@
 package net.voidhttp.util;
 
-import net.voidhttp.router.Middleware;
+import net.voidhttp.router.MiddlewareHandler;
 import net.voidhttp.util.asset.Asset;
 import net.voidhttp.util.asset.MIMEType;
 import net.voidhttp.util.asset.Resource;
@@ -14,7 +14,7 @@ public final class Handlers {
      * @param folder static folder path
      * @param cache cache asset content
      */
-    public static Middleware staticFolder(String folder, boolean cache) {
+    public static MiddlewareHandler staticFolder(String folder, boolean cache) {
         // create a new handler for the resource files
         return (req, res) -> {
             // get the requested url
@@ -52,7 +52,7 @@ public final class Handlers {
      * @param prefix http route prefix
      * @param cache cache asset content
      */
-    public static Middleware staticFolder(String folder, String prefix, boolean cache) {
+    public static MiddlewareHandler staticFolder(String folder, String prefix, boolean cache) {
         // create a new handler for the resource files
         return (req, res) -> {
             // get the requested url
@@ -90,7 +90,7 @@ public final class Handlers {
      * Create a static folder handler.
      * @param folder static folder path
      */
-    public static Middleware staticFolder(String folder) {
+    public static MiddlewareHandler staticFolder(String folder) {
         return staticFolder(folder, false);
     }
 
@@ -98,7 +98,7 @@ public final class Handlers {
      * Create a static resources handler.
      * @param path static resources path
      */
-    public static Middleware staticResources(String path, boolean cache) {
+    public static MiddlewareHandler staticResources(String path, boolean cache) {
         // create a new handler for the resource files
         return (req, res) -> {
             // get the requested url
@@ -129,7 +129,7 @@ public final class Handlers {
      * Create a static resources handler.
      * @param path static resources path
      */
-    public static Middleware staticResources(String path) {
+    public static MiddlewareHandler staticResources(String path) {
         return staticResources(path, false);
     }
 

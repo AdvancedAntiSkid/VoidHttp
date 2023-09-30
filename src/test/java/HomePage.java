@@ -1,8 +1,8 @@
-import net.voidhttp.router.Middleware;
+import net.voidhttp.router.MiddlewareHandler;
 import net.voidhttp.request.Request;
 import net.voidhttp.response.Response;
 
-public class HomePage implements Middleware {
+public class HomePage implements MiddlewareHandler {
     /**
      * Handle the incoming HTTP request.
      * @param req client request

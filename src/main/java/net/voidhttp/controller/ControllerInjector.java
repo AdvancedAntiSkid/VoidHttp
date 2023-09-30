@@ -6,18 +6,25 @@ import dev.inventex.octa.concurrent.future.Future;
 import lombok.SneakyThrows;
 import net.voidhttp.HttpServer;
 import net.voidhttp.controller.dto.Dto;
+import net.voidhttp.controller.guard.Guard;
+import net.voidhttp.controller.guard.Handler;
+import net.voidhttp.controller.guard.Middleware;
 import net.voidhttp.controller.handler.HandlerType;
 import net.voidhttp.controller.route.*;
 import net.voidhttp.controller.validator.*;
-import net.voidhttp.router.Middleware;
+import net.voidhttp.router.MiddlewareHandler;
 import net.voidhttp.util.asset.MIMEType;
 import net.voidhttp.util.console.Logger;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Represents a manager that registers controller blueprint classes and attaches
@@ -69,44 +76,93 @@ public class ControllerInjector {
             // resole the metadata of the method parameters
             List<ParameterMeta> metaList = ParameterMeta.resolve(method);
 
+            // resolve the registered middlewares of the method
+            List<MiddlewareHandler> middlewares = getMiddlewares(method);
+
             // create a middleware hook that will invoke the listener with the
             // transformed arguments specified by their parameter annotations
-            Middleware hook = createHook(method, metaList, handler);
+            MiddlewareHandler hook = createHook(method, metaList, handler, false);
 
             // register the route listener for each method
             for (MethodMeta httpMethod : methods) {
+                // resolve the route path from the method annotation
                 String route = prefix + '/' + httpMethod.getValue();
-                server.register(httpMethod.getMethod(), route, hook);
+
+                // add the route handler hook to the list of middlewares
+                middlewares.add(hook);
+                MiddlewareHandler[] handlers = middlewares.toArray(new MiddlewareHandler[0]);
+
+                // register the route listener for the controller
+                server.register(httpMethod.getMethod(), route, handlers);
             }
         }
     }
 
     /**
-     * Resolve the registered http methods of the listener that the route should register.
+     * Resolve the registered middleware classes of the listener that the route should register.
      * @param method the listener method
-     * @return the registered http methods
+     * @return the list of the instantiated middlewares
      */
-    @SneakyThrows
-    private Set<MethodMeta> getMethods(Method method) {
-        Set<MethodMeta> methods = new HashSet<>();
+    private List<MiddlewareHandler> getMiddlewares(Method method) {
+        List<MiddlewareHandler> middlewares = new ArrayList<>();
         // loop through the non-inherited annotations of the class method
         for (Annotation annotation : method.getDeclaredAnnotations()) {
-            // check if the annotation is a http method annotation
-            for (Class<?> type : METHOD_TYPES) {
-                // ignore the annotation if it is not a http method annotation
-                if (!annotation.annotationType().equals(type))
-                    continue;
+            // check if the annotation is not a middleware annotation
+            if (!annotation.annotationType().equals(Guard.class))
+                continue;
 
-                // resolve the value of the annotation
-                Method valueMethod = type.getDeclaredMethod("value");
-                String invoke = (String) valueMethod.invoke(annotation);
+            // resolve the middleware class from the annotation
+            Guard guard = (Guard) annotation;
+            MiddlewareHandler middleware;
+            try {
+                // instantiate the middleware class
+                Class<?> clazz = guard.value();
 
-                // resolve the http method from the annotation name
-                String methodName = type.getSimpleName().toUpperCase();
-                methods.add(new MethodMeta(net.voidhttp.request.Method.of(methodName), invoke));
+                if (MiddlewareHandler.class.isAssignableFrom(clazz)) {
+                    Constructor<?> constructor = clazz.getDeclaredConstructor();
+                    constructor.setAccessible(true);
+                    middleware = (MiddlewareHandler) constructor.newInstance();
+                } else {
+                    // check if the class is annotated with @Preprocess
+                    Middleware preprocess = clazz.getAnnotation(Middleware.class);
+                    if (preprocess == null)
+                        throw new IllegalArgumentException("Guard does not annotate @Middleware");
+
+                    // resolve the handler method of the middleware class
+                    Method handlerMethod = null;
+                    for (Method declaredMethod : clazz.getDeclaredMethods()) {
+                        if (!declaredMethod.isAnnotationPresent(Handler.class))
+                            continue;
+                        handlerMethod = declaredMethod;
+                        break;
+                    }
+
+                    // check if there is no handler method of the middleware
+                    if (handlerMethod == null)
+                        throw new IllegalArgumentException("Guard does have any methods annotated with @Handler");
+
+                    // instantiate the middleware class
+                    Constructor<?> constructor = clazz.getDeclaredConstructor();
+                    constructor.setAccessible(true);
+
+                    Object handler = constructor.newInstance();
+
+                    // resole the metadata of the method parameters
+                    List<ParameterMeta> metaList = ParameterMeta.resolve(handlerMethod);
+
+                    // create a middleware hook that will invoke the middleware with the
+                    // transformed arguments specified by their parameter annotations
+                    middleware = createHook(handlerMethod, metaList, handler, true);
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                continue;
             }
+            // add the middleware to the list
+            middlewares.add(middleware);
         }
-        return methods;
+        return middlewares;
     }
 
     /**
@@ -116,7 +172,7 @@ public class ControllerInjector {
      * @return the middleware hook
      * @param <T> the type of the controller
      */
-    private <T> Middleware createHook(Method method, List<ParameterMeta> metaList, T controller) {
+    private <T> MiddlewareHandler createHook(Method method, List<ParameterMeta> metaList, T controller, boolean isGuard) {
         return (request, response) -> {
             // create an array to hold the resolved arguments for the method
             Object[] args = new Object[metaList.size()];
@@ -187,7 +243,13 @@ public class ControllerInjector {
             }
 
             // invoke the route listener method using transformed arguments
-            Object result = method.invoke(controller, args);
+            Object result = null;
+            try {
+                method.setAccessible(true);
+                result = method.invoke(controller, args);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
             // handle raw string http response
             if (CharSequence.class.isAssignableFrom(returnType))
@@ -222,15 +284,44 @@ public class ControllerInjector {
                 }
                 // handle exception whilst completing the future
                 catch (Exception e) {
+                    e.printStackTrace();
                     response.sendError(e);
                 }
             }
 
             // handle invalid return type
-            else {
+            else if (!isGuard) {
                 Logger.error("Handler must return a CharSequence, JsonObject, or DTO");
                 response.sendError(new IllegalArgumentException("Handler must return a CharSequence, JsonObject, or DTO"));
             }
         };
+    }
+
+    /**
+     * Resolve the registered http methods of the listener that the route should register.
+     * @param method the listener method
+     * @return the registered http methods
+     */
+    @SneakyThrows
+    private Set<MethodMeta> getMethods(Method method) {
+        Set<MethodMeta> methods = new HashSet<>();
+        // loop through the non-inherited annotations of the class method
+        for (Annotation annotation : method.getDeclaredAnnotations()) {
+            // check if the annotation is a http method annotation
+            for (Class<?> type : METHOD_TYPES) {
+                // ignore the annotation if it is not a http method annotation
+                if (!annotation.annotationType().equals(type))
+                    continue;
+
+                // resolve the value of the annotation
+                Method valueMethod = type.getDeclaredMethod("value");
+                String invoke = (String) valueMethod.invoke(annotation);
+
+                // resolve the http method from the annotation name
+                String methodName = type.getSimpleName().toUpperCase();
+                methods.add(new MethodMeta(net.voidhttp.request.Method.of(methodName), invoke));
+            }
+        }
+        return methods;
     }
 }

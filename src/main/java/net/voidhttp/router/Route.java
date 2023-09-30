@@ -1,9 +1,7 @@
 package net.voidhttp.router;
 
 import net.voidhttp.config.Flag;
-import net.voidhttp.request.HttpRequest;
 import net.voidhttp.request.Request;
-import net.voidhttp.request.query.Query;
 import net.voidhttp.request.query.RequestQuery;
 import net.voidhttp.response.HttpResponse;
 import net.voidhttp.response.Response;
@@ -25,14 +23,14 @@ public class Route {
     /**
      * The array of request handlers.
      */
-    private final Middleware[] middlewares;
+    private final MiddlewareHandler[] middlewares;
 
     /**
      * Initialize request route.
      * @param route route url
      * @param middlewares request handlers
      */
-    public Route(String route, Middleware[] middlewares) {
+    public Route(String route, MiddlewareHandler[] middlewares) {
         this.route = route;
         this.middlewares = middlewares;
     }
@@ -82,7 +80,7 @@ public class Route {
      */
     public void handle(Request request, Response response) {
         // loop through the registered request handlers
-        for (Middleware middleware : middlewares) {
+        for (MiddlewareHandler middleware : middlewares) {
             try {
                 // handle the HTTP request
                 middleware.handle(request, response);
@@ -117,7 +115,7 @@ public class Route {
     /**
      * The array of request handlers.
      */
-    public Middleware[] getHandlers() {
+    public MiddlewareHandler[] getHandlers() {
         return middlewares;
     }
 }
