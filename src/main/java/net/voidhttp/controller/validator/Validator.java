@@ -106,6 +106,15 @@ public class Validator {
                 if (!str.matches(matches.value()))
                     throw new IllegalArgumentException("Field " + field.getName() + " " + str + " does not match the regex " + matches.value());
             }
+
+            // handle number sign validation
+            if (field.isAnnotationPresent(Signed.class)) {
+                Signed signed = field.getAnnotation(Signed.class);
+                int number = (int) field.get(value);
+                // check if the number is negative
+                if (number < 0)
+                    throw new IllegalArgumentException("Field " + field.getName() + " " + number + " is negative");
+            }
         }
     }
 }
