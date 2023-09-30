@@ -1,12 +1,16 @@
 package net.voidhttp.controller;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import lombok.SneakyThrows;
 import net.voidhttp.HttpServer;
+import net.voidhttp.controller.dto.Dto;
 import net.voidhttp.controller.handler.HandlerType;
 import net.voidhttp.controller.route.*;
 import net.voidhttp.controller.validator.*;
 import net.voidhttp.router.Middleware;
+import net.voidhttp.util.asset.MIMEType;
+import net.voidhttp.util.console.Logger;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -76,7 +80,6 @@ public class ControllerInjector {
         }
     }
 
-
     /**
      * Resolve the registered http methods of the listener that the route should register.
      * @param method the listener method
@@ -116,6 +119,9 @@ public class ControllerInjector {
         return (request, response) -> {
             // create an array to hold the resolved arguments for the method
             Object[] args = new Object[metaList.size()];
+
+            // retrieve the return type of the method
+            Class<?> returnType = method.getReturnType();
 
             // transform the request data to the method parameters
             for (int i = 0; i < metaList.size(); i++) {
@@ -180,7 +186,25 @@ public class ControllerInjector {
             }
 
             // invoke the route listener method using transformed arguments
-            method.invoke(controller, args);
+            Object result = method.invoke(controller, args);
+
+            // handle raw string http response
+            if (CharSequence.class.isAssignableFrom(returnType))
+                response.send(String.valueOf(result), MIMEType.JSON);
+
+            // handle wrapped json http response
+            else if (JsonObject.class.isAssignableFrom(returnType))
+                response.send(result.toString(), MIMEType.JSON);
+
+            // handle wrapped dto http response
+            else if (returnType.isAnnotationPresent(Dto.class))
+                response.send(GSON.toJson(result), MIMEType.JSON);
+
+            // handle invalid return type
+            else {
+                Logger.error("Handler must return a CharSequence, JsonObject, or DTO");
+                response.sendError(new IllegalArgumentException("Handler must return a CharSequence, JsonObject, or DTO"));
+            }
         };
     }
 }
