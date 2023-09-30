@@ -1,3 +1,4 @@
+import dev.inventex.octa.concurrent.future.Future;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.ToString;
@@ -56,9 +57,9 @@ public class ControllerTest {
     @Controller("auth")
     public static class TestController {
         @Post("login")
-        public LoginResponse login(@Body LoginRequest data) {
+        public Future<LoginResponse> login(@Body LoginRequest data) {
             System.out.println("try login " + data);
-            return new LoginResponse(true, "success");
+            return Future.completed(new LoginResponse(true, "success"));
         }
     }
 

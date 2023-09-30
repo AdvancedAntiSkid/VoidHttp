@@ -2,6 +2,7 @@ package net.voidhttp.controller;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import dev.inventex.octa.concurrent.future.Future;
 import lombok.SneakyThrows;
 import net.voidhttp.HttpServer;
 import net.voidhttp.controller.dto.Dto;
@@ -199,6 +200,31 @@ public class ControllerInjector {
             // handle wrapped dto http response
             else if (returnType.isAnnotationPresent(Dto.class))
                 response.send(GSON.toJson(result), MIMEType.JSON);
+
+            // handle asynchronous http response
+            else if (returnType.isAssignableFrom(Future.class)) {
+                // complete the future on the request thread
+                Future<?> future = (Future<?>) result;
+                try {
+                    Object value = future.get();
+
+                    // handle raw string http response
+                    if (CharSequence.class.isAssignableFrom(value.getClass()))
+                        response.send(String.valueOf(value), MIMEType.JSON);
+
+                    // handle wrapped json http response
+                    else if (JsonObject.class.isAssignableFrom(value.getClass()))
+                        response.send(value.toString(), MIMEType.JSON);
+
+                    // handle wrapped dto http response
+                    else if (value.getClass().isAnnotationPresent(Dto.class))
+                        response.send(GSON.toJson(value), MIMEType.JSON);
+                }
+                // handle exception whilst completing the future
+                catch (Exception e) {
+                    response.sendError(e);
+                }
+            }
 
             // handle invalid return type
             else {
