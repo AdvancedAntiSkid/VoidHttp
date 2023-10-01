@@ -21,7 +21,6 @@ public interface Headers {
      */
     String get(String key);
 
-
     /**
      * Get the map of the holding headers.
      * @return header list

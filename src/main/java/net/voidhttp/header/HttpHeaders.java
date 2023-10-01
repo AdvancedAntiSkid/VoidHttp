@@ -11,8 +11,7 @@ public class HttpHeaders implements Headers {
     /**
      * The registered HTTP headers.
      */
-    // private final List<Header> headers;
-    private final Map<String, String> headers = new LinkedHashMap<>();
+    private final Map<String, String> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
     /**
      * Initialize HTTP headers.

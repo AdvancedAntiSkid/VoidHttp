@@ -2,6 +2,7 @@ package net.voidhttp.response;
 
 import com.google.common.io.ByteStreams;
 import com.google.gson.JsonObject;
+import lombok.Getter;
 import net.voidhttp.HttpServer;
 import net.voidhttp.config.Flag;
 import net.voidhttp.header.Headers;
@@ -25,7 +26,11 @@ import java.util.Date;
 public class HttpResponse implements Response {
     /**
      * The server that handles the http response.
+     * -- GETTER --
+     *  Get the server that handles the http response.
+
      */
+    @Getter
     private final HttpServer server;
 
     /**
@@ -269,10 +274,4 @@ public class HttpResponse implements Response {
         return cookies;
     }
 
-    /**
-     * Get the server that handles the http response.
-     */
-    public HttpServer getServer() {
-        return server;
-    }
 }

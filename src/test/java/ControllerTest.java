@@ -10,6 +10,7 @@ import net.voidhttp.controller.guard.Guard;
 import net.voidhttp.controller.handler.Body;
 import net.voidhttp.controller.guard.UseGuard;
 import net.voidhttp.controller.handler.Req;
+import net.voidhttp.controller.handler.Text;
 import net.voidhttp.controller.route.Controller;
 import net.voidhttp.controller.route.Post;
 import net.voidhttp.controller.validator.IsStrongPassword;
@@ -72,8 +73,8 @@ public class ControllerTest {
     public static class TestController {
         @Post("login")
         @UseGuard(TestMiddleware.class)
-        public Future<LoginResponse> login(@Body LoginRequest data) {
-            System.out.println("try login " + data);
+        public Future<LoginResponse> login(@Req Request req) {
+            System.out.println("try login " + req.body());
             return Future.completed(new LoginResponse(true, "success"));
         }
     }
