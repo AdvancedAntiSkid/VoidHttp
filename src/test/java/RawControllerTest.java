@@ -151,7 +151,7 @@ public class RawControllerTest {
                     parameters.add(new ParameterHandler(HandlerType.PARAMS, type));
                 }
 
-                else if (annotation.annotationType() == Query.class) {
+                else if (annotation.annotationType() == UrlQuery.class) {
                     if (!net.voidhttp.request.query.Query.class.isAssignableFrom(type))
                         throw new IllegalArgumentException("Handler annotated with @Query must be a Query");
                     parameters.add(new ParameterHandler(HandlerType.QUERY, type));
@@ -175,7 +175,7 @@ public class RawControllerTest {
                     parameters.add(new ParameterHandler(HandlerType.SESSION, type));
                 }
 
-                else if (annotation.annotationType() == Data.class) {
+                else if (annotation.annotationType() == Pass.class) {
                     if (!net.voidhttp.request.data.Data.class.isAssignableFrom(type))
                         throw new IllegalArgumentException("Handler annotated with @Data must be a Data");
                     parameters.add(new ParameterHandler(HandlerType.DATA, type));

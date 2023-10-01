@@ -8,8 +8,13 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.voidhttp.controller.dto.Dto;
 import net.voidhttp.controller.handler.*;
+import net.voidhttp.header.Headers;
 import net.voidhttp.request.Request;
+import net.voidhttp.request.cookie.Cookies;
+import net.voidhttp.request.data.Data;
 import net.voidhttp.request.parameter.Parameters;
+import net.voidhttp.request.query.Query;
+import net.voidhttp.request.session.Session;
 import net.voidhttp.response.Response;
 
 import java.lang.annotation.Annotation;
@@ -129,9 +134,9 @@ public class ParameterMeta {
             }
 
             // handle a parameter for the request query parameters
-            else if (annotation.annotationType() == Query.class) {
+            else if (annotation.annotationType() == UrlQuery.class) {
                 // validate that the parameter is a valid query type
-                if (!net.voidhttp.request.query.Query.class.isAssignableFrom(type))
+                if (!Query.class.isAssignableFrom(type))
                     throw new IllegalArgumentException("Handler annotated with @Query must be a Query");
                 // register the parameter as a query metadata
                 parameters.add(new ParameterMeta(HandlerType.QUERY, type));
@@ -140,8 +145,8 @@ public class ParameterMeta {
             // handle a parameter for the request headers
             else if (annotation.annotationType() == Header.class) {
                 // validate that the parameter is a valid headers type
-                if (net.voidhttp.header.Headers.class.isAssignableFrom(type))
-                    throw new IllegalArgumentException("Handler annotated with @Headers must be a Headers");
+                if (!Headers.class.isAssignableFrom(type))
+                    throw new IllegalArgumentException("Handler annotated with @Header must be a Headers");
                 // register the parameter as a headers metadata
                 parameters.add(new ParameterMeta(HandlerType.HEADERS, type));
             }
@@ -149,8 +154,8 @@ public class ParameterMeta {
             // handle a parameter for the request cookies
             else if (annotation.annotationType() == Cookie.class) {
                 // validate that the parameter is a valid cookies type
-                if (!net.voidhttp.request.cookie.Cookies.class.isAssignableFrom(type))
-                    throw new IllegalArgumentException("Handler annotated with @Cookies must be a Cookies");
+                if (!Cookies.class.isAssignableFrom(type))
+                    throw new IllegalArgumentException("Handler annotated with @Cookie must be a Cookies");
                 // register the parameter as a cookies metadata
                 parameters.add(new ParameterMeta(HandlerType.COOKIES, type));
             }
@@ -158,17 +163,17 @@ public class ParameterMeta {
             // handle a parameter for the request session
             else if (annotation.annotationType() == State.class) {
                 // validate that the parameter is a valid session type
-                if (!net.voidhttp.request.session.Session.class.isAssignableFrom(type))
-                    throw new IllegalArgumentException("Handler annotated with @Session must be a Session");
+                if (!Session.class.isAssignableFrom(type))
+                    throw new IllegalArgumentException("Handler annotated with @State must be a Session");
                 // register the parameter as a session metadata
                 parameters.add(new ParameterMeta(HandlerType.SESSION, type));
             }
 
             // handle a parameter for the request data
-            else if (annotation.annotationType() == Data.class) {
+            else if (annotation.annotationType() == Pass.class) {
                 // validate that the parameter is a valid data type
-                if (!net.voidhttp.request.data.Data.class.isAssignableFrom(type))
-                    throw new IllegalArgumentException("Handler annotated with @Data must be a Data");
+                if (!Data.class.isAssignableFrom(type))
+                    throw new IllegalArgumentException("Handler annotated with @Pass must be a Data");
                 // register the parameter as a data metadata
                 parameters.add(new ParameterMeta(HandlerType.DATA, type));
             }
