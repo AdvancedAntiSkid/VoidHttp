@@ -31,7 +31,7 @@ public class Router {
     /**
      * The list of the globally used handlers.
      */
-    private final List<MiddlewareHandler> middlewares = new ArrayList<>();
+    private final List<Middleware> middlewares = new ArrayList<>();
 
     /**
      * Initialize the request router.
@@ -47,7 +47,7 @@ public class Router {
      * @param route request route
      * @param middlewares request handlers
      */
-    public void register(Method method, String route, MiddlewareHandler... middlewares) {
+    public void register(Method method, String route, Middleware... middlewares) {
         // get the registered routes for the method
         List<Route> routes = routeMap.getOrDefault(method, new ArrayList<>());
         // register the handlers
@@ -61,7 +61,7 @@ public class Router {
      * @param code error code
      * @param middlewares error handlers
      */
-    public void error(int code, MiddlewareHandler... middlewares) {
+    public void error(int code, Middleware... middlewares) {
         // get the registered routes for the error code
         List<Route> routes = errorMap.getOrDefault(code, new ArrayList<>());
         // register the handlers
@@ -74,7 +74,7 @@ public class Router {
      * Register a global request handler.
      * @param middlewares global handlers
      */
-    public void use(MiddlewareHandler... middlewares) {
+    public void use(Middleware... middlewares) {
         this.middlewares.addAll(Arrays.asList(middlewares));
     }
 
@@ -88,7 +88,7 @@ public class Router {
         HttpResponse response = context.getResponse();
         // handle globally used middlewares
         // this must be done before handling the method handlers
-        for (MiddlewareHandler middleware : middlewares) {
+        for (Middleware middleware : middlewares) {
             try {
                 // make the global handler handle the request
                 middleware.handle(request, response);

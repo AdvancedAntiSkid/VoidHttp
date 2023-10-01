@@ -44,7 +44,7 @@ public class Blueprint {
      * @param route request route
      * @param middlewares request handlers
      */
-    public Blueprint register(Method method, String route, MiddlewareHandler... middlewares) {
+    public Blueprint register(Method method, String route, Middleware... middlewares) {
         // get the registered routes for the method
         List<Route> routes = routeMap.getOrDefault(method, new ArrayList<>());
         // register the handlers
@@ -59,7 +59,7 @@ public class Blueprint {
      * @param route request route
      * @param middlewares request handlers
      */
-    public Blueprint get(String route, MiddlewareHandler... middlewares) {
+    public Blueprint get(String route, Middleware... middlewares) {
         return register(Method.GET, route, middlewares);
     }
 
@@ -68,7 +68,7 @@ public class Blueprint {
      * @param route request route
      * @param middlewares request handler
      */
-    public Blueprint post(String route, MiddlewareHandler... middlewares) {
+    public Blueprint post(String route, Middleware... middlewares) {
         return register(Method.POST, route, middlewares);
     }
 

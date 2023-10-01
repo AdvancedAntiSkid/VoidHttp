@@ -6,18 +6,15 @@ import net.voidhttp.HttpServer;
 import net.voidhttp.controller.ControllerInjector;
 import net.voidhttp.controller.dto.*;
 import net.voidhttp.controller.guard.Handler;
-import net.voidhttp.controller.guard.Middleware;
-import net.voidhttp.controller.handler.Body;
 import net.voidhttp.controller.guard.Guard;
+import net.voidhttp.controller.handler.Body;
+import net.voidhttp.controller.guard.UseGuard;
 import net.voidhttp.controller.handler.Req;
-import net.voidhttp.controller.handler.Res;
 import net.voidhttp.controller.route.Controller;
 import net.voidhttp.controller.route.Post;
 import net.voidhttp.controller.validator.IsStrongPassword;
 import net.voidhttp.controller.validator.Length;
 import net.voidhttp.request.Request;
-import net.voidhttp.response.Response;
-import net.voidhttp.router.MiddlewareHandler;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -62,7 +59,7 @@ public class ControllerTest {
         private String message;
     }
 
-    @Middleware
+    @Guard
     private static class TestMiddleware {
         @Handler
         public void handle(@Req Request req) {
@@ -74,7 +71,7 @@ public class ControllerTest {
     @Controller("auth")
     public static class TestController {
         @Post("login")
-        @Guard(TestMiddleware.class)
+        @UseGuard(TestMiddleware.class)
         public Future<LoginResponse> login(@Body LoginRequest data) {
             System.out.println("try login " + data);
             return Future.completed(new LoginResponse(true, "success"));

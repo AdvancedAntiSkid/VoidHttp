@@ -6,25 +6,23 @@ import dev.inventex.octa.concurrent.future.Future;
 import lombok.SneakyThrows;
 import net.voidhttp.HttpServer;
 import net.voidhttp.controller.dto.Dto;
-import net.voidhttp.controller.guard.Guard;
+import net.voidhttp.controller.guard.UseGuard;
 import net.voidhttp.controller.guard.Handler;
-import net.voidhttp.controller.guard.Middleware;
+import net.voidhttp.controller.guard.Guard;
 import net.voidhttp.controller.handler.HandlerType;
 import net.voidhttp.controller.route.*;
 import net.voidhttp.controller.validator.*;
-import net.voidhttp.router.MiddlewareHandler;
+import net.voidhttp.router.Middleware;
 import net.voidhttp.util.asset.MIMEType;
 import net.voidhttp.util.console.Logger;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Represents a manager that registers controller blueprint classes and attaches
@@ -77,11 +75,11 @@ public class ControllerInjector {
             List<ParameterMeta> metaList = ParameterMeta.resolve(method);
 
             // resolve the registered middlewares of the method
-            List<MiddlewareHandler> middlewares = getMiddlewares(method);
+            List<Middleware> middlewares = getMiddlewares(method);
 
             // create a middleware hook that will invoke the listener with the
             // transformed arguments specified by their parameter annotations
-            MiddlewareHandler hook = createHook(method, metaList, handler, false);
+            Middleware hook = createHook(method, metaList, handler, false);
 
             // register the route listener for each method
             for (MethodMeta httpMethod : methods) {
@@ -90,7 +88,7 @@ public class ControllerInjector {
 
                 // add the route handler hook to the list of middlewares
                 middlewares.add(hook);
-                MiddlewareHandler[] handlers = middlewares.toArray(new MiddlewareHandler[0]);
+                Middleware[] handlers = middlewares.toArray(new Middleware[0]);
 
                 // register the route listener for the controller
                 server.register(httpMethod.getMethod(), route, handlers);
@@ -103,28 +101,28 @@ public class ControllerInjector {
      * @param method the listener method
      * @return the list of the instantiated middlewares
      */
-    private List<MiddlewareHandler> getMiddlewares(Method method) {
-        List<MiddlewareHandler> middlewares = new ArrayList<>();
+    private List<Middleware> getMiddlewares(Method method) {
+        List<Middleware> middlewares = new ArrayList<>();
         // loop through the non-inherited annotations of the class method
         for (Annotation annotation : method.getDeclaredAnnotations()) {
             // check if the annotation is not a middleware annotation
-            if (!annotation.annotationType().equals(Guard.class))
+            if (!annotation.annotationType().equals(UseGuard.class))
                 continue;
 
             // resolve the middleware class from the annotation
-            Guard guard = (Guard) annotation;
-            MiddlewareHandler middleware;
+            UseGuard guard = (UseGuard) annotation;
+            Middleware middleware;
             try {
                 // instantiate the middleware class
                 Class<?> clazz = guard.value();
 
-                if (MiddlewareHandler.class.isAssignableFrom(clazz)) {
+                if (Middleware.class.isAssignableFrom(clazz)) {
                     Constructor<?> constructor = clazz.getDeclaredConstructor();
                     constructor.setAccessible(true);
-                    middleware = (MiddlewareHandler) constructor.newInstance();
+                    middleware = (Middleware) constructor.newInstance();
                 } else {
                     // check if the class is annotated with @Preprocess
-                    Middleware preprocess = clazz.getAnnotation(Middleware.class);
+                    Guard preprocess = clazz.getAnnotation(Guard.class);
                     if (preprocess == null)
                         throw new IllegalArgumentException("Guard does not annotate @Middleware");
 
@@ -172,7 +170,7 @@ public class ControllerInjector {
      * @return the middleware hook
      * @param <T> the type of the controller
      */
-    private <T> MiddlewareHandler createHook(Method method, List<ParameterMeta> metaList, T controller, boolean isGuard) {
+    private <T> Middleware createHook(Method method, List<ParameterMeta> metaList, T controller, boolean isGuard) {
         return (request, response) -> {
             // create an array to hold the resolved arguments for the method
             Object[] args = new Object[metaList.size()];

@@ -23,14 +23,14 @@ public class Route {
     /**
      * The array of request handlers.
      */
-    private final MiddlewareHandler[] middlewares;
+    private final Middleware[] middlewares;
 
     /**
      * Initialize request route.
      * @param route route url
      * @param middlewares request handlers
      */
-    public Route(String route, MiddlewareHandler[] middlewares) {
+    public Route(String route, Middleware[] middlewares) {
         this.route = route;
         this.middlewares = middlewares;
     }
@@ -80,7 +80,7 @@ public class Route {
      */
     public void handle(Request request, Response response) {
         // loop through the registered request handlers
-        for (MiddlewareHandler middleware : middlewares) {
+        for (Middleware middleware : middlewares) {
             try {
                 // handle the HTTP request
                 middleware.handle(request, response);
@@ -115,7 +115,7 @@ public class Route {
     /**
      * The array of request handlers.
      */
-    public MiddlewareHandler[] getHandlers() {
+    public Middleware[] getHandlers() {
         return middlewares;
     }
 }
