@@ -2,6 +2,7 @@ package net.voidhttp.header;
 
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents a HTTP header manager.
@@ -18,20 +19,14 @@ public interface Headers {
      * Get the header with the given key.
      * @param key header key
      */
-    Header get(String key);
+    String get(String key);
+
 
     /**
-     * Get the list of headers with the given key.
-     * @param key header key
+     * Get the map of the holding headers.
      * @return header list
      */
-    List<Header> getAll(String key);
-
-    /**
-     * Get the list of the holding headers.
-     * @return header list
-     */
-    List<Header> getHeaders();
+    Map<String, String> getHeaders();
 
     /**
      * Register a new header.
@@ -66,13 +61,6 @@ public interface Headers {
      * @return header was removed
      */
     boolean remove(String key);
-
-    /**
-     * Remove all the headers from the registry with the given key.
-     * @param key header key
-     * @return any headers were removed
-     */
-    boolean removeAll(String key);
 
     /**
      * Write the registered headers to a print stream.

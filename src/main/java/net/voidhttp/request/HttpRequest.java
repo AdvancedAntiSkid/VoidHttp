@@ -150,26 +150,26 @@ public class HttpRequest implements Request {
             headers = HttpHeaders.parse(lines);
             // parse the request cookies
             // check if there is a header with the key "cookie"
-            Header header = headers.get("cookie");
+            String header = headers.get("cookie");
             cookies = header != null
-                ? RequestCookies.parse(header.value())
+                ? RequestCookies.parse(header)
                 : RequestCookies.empty();
             // create request transfer data holder
             data = new RequestData();
             // get the length of the body
             // read the body of the request
-            Header contentLength = headers.get("Content-Length");
+            String contentLength = headers.get("Content-Length");
             if (contentLength != null) {
                 StringBuilder builder = new StringBuilder();
-                int length = Integer.parseInt(contentLength.value());
+                int length = Integer.parseInt(contentLength);
                 // read the remaining parts of the request content
                 for (int i = 0; i < length; i++)
                     builder.append((char) reader.read());
                 body = builder.toString();
             }
             // get the type of the requested content
-            Header contentType = headers.get("content-type");
-            if (contentType != null && contentType.value().startsWith("application/json")) {
+            String contentType = headers.get("content-type");
+            if (contentType != null && contentType.startsWith("application/json")) {
                 // parse the request body to json
                 try {
                     json = (JsonObject) JsonParser.parseString(body);

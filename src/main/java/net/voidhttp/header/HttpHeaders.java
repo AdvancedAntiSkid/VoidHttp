@@ -1,9 +1,7 @@
 package net.voidhttp.header;
 
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -13,14 +11,16 @@ public class HttpHeaders implements Headers {
     /**
      * The registered HTTP headers.
      */
-    private final List<Header> headers;
+    // private final List<Header> headers;
+    private final Map<String, String> headers = new LinkedHashMap<>();
 
     /**
      * Initialize HTTP headers.
      * @param headers header registry
      */
     public HttpHeaders(List<Header> headers) {
-        this.headers = headers;
+        for (Header header : headers)
+            this.headers.put(header.key(), header.value());
     }
 
     /**
@@ -30,7 +30,7 @@ public class HttpHeaders implements Headers {
      */
     @Override
     public boolean has(String key) {
-        return get(key) != null;
+        return headers.containsKey(key);
     }
 
     /**
@@ -38,32 +38,17 @@ public class HttpHeaders implements Headers {
      * @param key header key
      */
     @Override
-    public Header get(String key) {
-        for (Header header : headers) {
-            if (header.is(key)) {
-                return header;
-            }
-        }
-        return null;
+    public String get(String key) {
+        return headers.get(key);
     }
 
+
     /**
-     * Get the list of headers with the given key.
-     * @param key header key
+     * Get the map of the holding headers.
      * @return header list
      */
     @Override
-    public List<Header> getAll(String key) {
-        return headers.stream().filter(header -> header.is(key))
-            .collect(Collectors.toList());
-    }
-
-    /**
-     * Get the list of the holding headers.
-     * @return header list
-     */
-    @Override
-    public List<Header> getHeaders() {
+    public Map<String, String> getHeaders() {
         return headers;
     }
 
@@ -74,7 +59,7 @@ public class HttpHeaders implements Headers {
      */
     @Override
     public void add(String key, Object value) {
-        headers.add(new Header(key, value));
+        headers.put(key, String.valueOf(value));
     }
 
     /**
@@ -105,7 +90,7 @@ public class HttpHeaders implements Headers {
      */
     @Override
     public void add(Header header) {
-        headers.add(header);
+        headers.put(header.key(), header.value());
     }
 
     /**
@@ -115,24 +100,7 @@ public class HttpHeaders implements Headers {
      */
     @Override
     public boolean remove(String key) {
-        Iterator<Header> iterator = headers.iterator();
-        while (iterator.hasNext()) {
-            if (iterator.next().is(key)) {
-                iterator.remove();
-                return false;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Remove all the headers from the registry with the given key.
-     * @param key header key
-     * @return any headers were removed
-     */
-    @Override
-    public boolean removeAll(String key) {
-        return headers.removeIf(header -> header.is(key));
+        return headers.remove(key) != null;
     }
 
     /**
@@ -141,8 +109,8 @@ public class HttpHeaders implements Headers {
      */
     @Override
     public void write(PrintWriter writer) {
-        for (Header header : headers) {
-            writer.println(header.key() + ": " + header.value());
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            writer.println(entry.getKey() + ": " + entry.getValue());
         }
     }
 
