@@ -10,7 +10,7 @@ public class SessionTest {
         System.out.println(session.<Boolean>get("aaa"));
         System.out.println(session.<Double>get("123").intValue());
 
-        double a = session.get("123");
-        System.out.println(a);
+        double value = session.get("123");
+        System.out.println(value);
     }
 }

@@ -3,7 +3,7 @@ import net.voidhttp.config.Flag;
 import net.voidhttp.util.console.Logger;
 
 public class ServerTest {
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         HttpServer server = new HttpServer();
         server.enableFlags(Flag.NO_STACK_TRACE);
 
@@ -19,8 +19,6 @@ public class ServerTest {
             res.status(418).message("I'm a teapot");
         });
 
-        server.listen(80, () -> {
-            Logger.success("Webserver has been started");
-        });
+        server.listen(80, () -> Logger.success("Webserver has been started"));
     }
 }
