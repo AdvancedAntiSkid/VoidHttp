@@ -138,7 +138,7 @@ public class ParameterMeta {
             }
 
             // handle a parameter for the request headers
-            else if (annotation.annotationType() == Headers.class) {
+            else if (annotation.annotationType() == Header.class) {
                 // validate that the parameter is a valid headers type
                 if (net.voidhttp.header.Headers.class.isAssignableFrom(type))
                     throw new IllegalArgumentException("Handler annotated with @Headers must be a Headers");
@@ -147,7 +147,7 @@ public class ParameterMeta {
             }
 
             // handle a parameter for the request cookies
-            else if (annotation.annotationType() == Cookies.class) {
+            else if (annotation.annotationType() == Cookie.class) {
                 // validate that the parameter is a valid cookies type
                 if (!net.voidhttp.request.cookie.Cookies.class.isAssignableFrom(type))
                     throw new IllegalArgumentException("Handler annotated with @Cookies must be a Cookies");
@@ -156,7 +156,7 @@ public class ParameterMeta {
             }
 
             // handle a parameter for the request session
-            else if (annotation.annotationType() == Session.class) {
+            else if (annotation.annotationType() == State.class) {
                 // validate that the parameter is a valid session type
                 if (!net.voidhttp.request.session.Session.class.isAssignableFrom(type))
                     throw new IllegalArgumentException("Handler annotated with @Session must be a Session");

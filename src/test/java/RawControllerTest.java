@@ -157,19 +157,19 @@ public class RawControllerTest {
                     parameters.add(new ParameterHandler(HandlerType.QUERY, type));
                 }
 
-                else if (annotation.annotationType() == Headers.class) {
+                else if (annotation.annotationType() == Header.class) {
                     if (net.voidhttp.header.Headers.class.isAssignableFrom(type))
                         throw new IllegalArgumentException("Handler annotated with @Headers must be a Headers");
                     parameters.add(new ParameterHandler(HandlerType.HEADERS, type));
                 }
 
-                else if (annotation.annotationType() == Cookies.class) {
+                else if (annotation.annotationType() == Cookie.class) {
                     if (!net.voidhttp.request.cookie.Cookies.class.isAssignableFrom(type))
                         throw new IllegalArgumentException("Handler annotated with @Cookies must be a Cookies");
                     parameters.add(new ParameterHandler(HandlerType.COOKIES, type));
                 }
 
-                else if (annotation.annotationType() == Session.class) {
+                else if (annotation.annotationType() == State.class) {
                     if (!net.voidhttp.request.session.Session.class.isAssignableFrom(type))
                         throw new IllegalArgumentException("Handler annotated with @Session must be a Session");
                     parameters.add(new ParameterHandler(HandlerType.SESSION, type));
