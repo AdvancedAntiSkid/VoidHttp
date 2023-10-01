@@ -1,7 +1,10 @@
 import dev.inventex.octa.concurrent.future.Future;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.ToString;
+
 import net.voidhttp.HttpServer;
 import net.voidhttp.controller.ControllerInjector;
 import net.voidhttp.controller.dto.*;
@@ -25,12 +28,10 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 public class ControllerTest {
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         HttpServer server = new HttpServer();
-
         ControllerInjector injector = new ControllerInjector();
         injector.inject(server, new TestController());
-
         server.listenAsync(80, () -> System.out.println("Listening on port 80"));
 
         String endpoint = "auth/login?x=100";
@@ -78,18 +79,16 @@ public class ControllerTest {
         }
     }
 
-    private static String postJson(String endpoint, String data) throws Exception {
+    @SneakyThrows
+    private static String postJson(String endpoint, String data) {
         HttpURLConnection connection = getHttpURLConnection(endpoint, data);
-
         try (OutputStream stream = connection.getOutputStream()) {
             stream.write(data.getBytes(StandardCharsets.UTF_8));
         }
 
         StringBuilder response = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-            String line;
-            while ((line = reader.readLine()) != null)
-                response.append(line);
+            reader.lines().forEach(response::append);
         }
         return response.toString();
     }

@@ -1,11 +1,10 @@
 import com.google.gson.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.ToString;
+import lombok.*;
+
 import net.voidhttp.HttpServer;
 import net.voidhttp.controller.dto.Dto;
 import net.voidhttp.controller.handler.*;
+import net.voidhttp.controller.handler.Data;
 import net.voidhttp.controller.route.Controller;
 import net.voidhttp.controller.route.Post;
 import net.voidhttp.request.HttpRequest;
@@ -26,9 +25,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RawControllerTest {
-    public static void main(String[] args) throws Exception {
-        HttpServer server = new HttpServer();
+    private static final Gson gson = new Gson();
 
+    public static void main(String[] args) {
+        HttpServer server = new HttpServer();
         registerController(server, new TestController());
 
         server.listenAsync(80, () -> System.out.println("Listening on port 80"));
@@ -68,8 +68,6 @@ public class RawControllerTest {
         private final HandlerType type;
         private final Class<?> clazz;
     }
-
-    private static final Gson gson = new Gson();
 
     private static <T> void registerController(HttpServer server, T handler) {
         Class<?> clazz = handler.getClass();
@@ -247,7 +245,8 @@ public class RawControllerTest {
         }
     }
 
-    private static String postJson(String endpoint, String data) throws Exception {
+    @SneakyThrows
+    private static String postJson(String endpoint, String data) {
         HttpURLConnection connection = getHttpURLConnection(endpoint, data);
 
         try (OutputStream stream = connection.getOutputStream()) {
@@ -256,10 +255,7 @@ public class RawControllerTest {
 
         StringBuilder response = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                response.append(line);
-            }
+            reader.lines().forEach(response::append);
         }
         return response.toString();
     }
