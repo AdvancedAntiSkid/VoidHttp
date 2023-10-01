@@ -193,9 +193,10 @@ public class RawControllerTest {
                     if (parameter.type == HandlerType.TEXT)
                         args[i] = request.body();
 
-                    else if (parameter.type == HandlerType.JSON)
-                        // TODO validate request body that it is a valid json
+                    else if (parameter.type == HandlerType.JSON) {
+                        gson.fromJson(request.body(), JsonElement.class);
                         args[i] = CharSequence.class.isAssignableFrom(parameter.clazz) ? request.body() : gson.fromJson(request.body(), parameter.clazz);
+                    }
 
                     else if (parameter.type == HandlerType.REQUEST)
                         args[i] = request;
