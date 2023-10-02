@@ -148,7 +148,6 @@ public class HttpRequest implements Request {
             }
             // parse the request headers
             headers = HttpHeaders.parse(lines);
-            System.err.println(headers.getHeaders());
             // parse the request cookies
             // check if there is a header with the key "cookie"
             String header = headers.get("cookie");
