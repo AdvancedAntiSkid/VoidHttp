@@ -1,6 +1,39 @@
 # VoidHttp
 A simple multi-thread java webserver inspired by the syntax of Express.js and NestJS.
 
+# Installation
+## Maven
+```
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+```
+```
+<dependency>
+    <groupId>com.github.AdvancedAntiSkid</groupId>
+    <artifactId>VoidHttp</artifactId>
+    <version>1.0.1</version>
+</dependency>
+```
+
+## Gradle
+```
+allprojects {
+    repositories {
+        ...
+        maven { url 'https://jitpack.io' }
+    }
+}
+```
+```
+dependencies {
+    implementation 'com.github.AdvancedAntiSkid:VoidHttp:1.0.1'
+}
+```
+
 # Examples
 
 ## Using the modern controller system
