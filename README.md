@@ -3,7 +3,7 @@ A simple multi-thread java webserver inspired by the syntax of Express.js and Ne
 
 # Installation
 ## Maven
-```
+```xml
 <repositories>
     <repository>
         <id>jitpack.io</id>
@@ -11,7 +11,7 @@ A simple multi-thread java webserver inspired by the syntax of Express.js and Ne
     </repository>
 </repositories>
 ```
-```
+```xml
 <dependency>
     <groupId>com.github.AdvancedAntiSkid</groupId>
     <artifactId>VoidHttp</artifactId>
@@ -20,7 +20,7 @@ A simple multi-thread java webserver inspired by the syntax of Express.js and Ne
 ```
 
 ## Gradle
-```
+```gradle
 allprojects {
     repositories {
         ...
@@ -28,7 +28,7 @@ allprojects {
     }
 }
 ```
-```
+```gradle
 dependencies {
     implementation 'com.github.AdvancedAntiSkid:VoidHttp:1.0.1'
 }
