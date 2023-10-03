@@ -5,25 +5,44 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>net.voidhttp</groupId>
-    <artifactId>VoidHttp</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <artifactId>voidhttp</artifactId>
+    <version>1.0.1</version>
+    <packaging>jar</packaging>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
     </properties>
 
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>Github Packages</name>
+            <url>https://maven.pkg.github.com/AdvancedAntiSkid/VoidHttp</url>
+        </repository>
+    </distributionManagement>
+
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
+
     <dependencies>
+        <!-- https://mvnrepository.com/artifact/com.google.guava/guava -->
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>LATEST</version>
+            <version>32.1.2-jre</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
-            <version>LATEST</version>
+            <version>2.10.1</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -31,9 +50,9 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>dev.inventex.octa</groupId>
-            <artifactId>Octa</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <groupId>com.github.Inventex-Development</groupId>
+            <artifactId>OctaCore</artifactId>
+            <version>1.0.7</version>
         </dependency>
     </dependencies>
 </project>
