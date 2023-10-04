@@ -18,7 +18,10 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
 
 /**
  * Represents a HTTP server response to a client HTTP request.
@@ -26,9 +29,6 @@ import java.util.Date;
 public class HttpResponse implements Response {
     /**
      * The server that handles the http response.
-     * -- GETTER --
-     *  Get the server that handles the http response.
-
      */
     @Getter
     private final HttpServer server;
@@ -84,7 +84,7 @@ public class HttpResponse implements Response {
         // write the default header values if they are missing
         if (!server.hasFlag(Flag.NO_SERVER_NAME))
             headers.addIfAbsent("Server", "VoidHttp 1.0");
-        headers.addIfAbsent("Date", new Date());
+        headers.addIfAbsent("Date", currentDateTime());
         headers.addIfAbsent("Content-type", type);
         headers.addIfAbsent("Content-length", bytes.length);
         // write the response headers
@@ -99,6 +99,21 @@ public class HttpResponse implements Response {
         stream.flush();
         // close the connection
         stream.close();
+    }
+
+    /**
+     * Get the current date according to the HTTP date format.
+     * @return current date time RFC 1123 representation
+     */
+    private String currentDateTime() {
+        // Create a Date object representing the current date and time
+        Date currentDate = new Date();
+        // Create a SimpleDateFormat with the desired format and locale
+        SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US);
+        // Set the time zone to GMT (Greenwich Mean Time)
+        dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+        // Format the date as a string
+        return dateFormat.format(currentDate);
     }
 
     /**
