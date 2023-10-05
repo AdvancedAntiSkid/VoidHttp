@@ -108,9 +108,8 @@ public class HttpHeaders implements Headers {
      */
     @Override
     public void write(PrintWriter writer) {
-        for (Map.Entry<String, String> entry : headers.entrySet()) {
-            writer.println(entry.getKey() + ": " + entry.getValue());
-        }
+        for (Map.Entry<String, String> entry : headers.entrySet())
+            writer.print(entry.getKey() + ": " + entry.getValue() + "\r\n");
     }
 
     /**
