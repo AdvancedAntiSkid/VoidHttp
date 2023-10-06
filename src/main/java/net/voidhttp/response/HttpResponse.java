@@ -1,10 +1,12 @@
 package net.voidhttp.response;
 
 import com.google.common.io.ByteStreams;
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import lombok.Getter;
 import net.voidhttp.HttpServer;
 import net.voidhttp.config.Flag;
+import net.voidhttp.controller.dto.Dto;
 import net.voidhttp.header.Headers;
 import net.voidhttp.header.HttpHeaders;
 import net.voidhttp.response.cookie.Cookies;
@@ -27,6 +29,11 @@ import java.util.TimeZone;
  * Represents a HTTP server response to a client HTTP request.
  */
 public class HttpResponse implements Response {
+    /**
+     * The json serializer and deserializer.
+     */
+    private static Gson gson = new Gson();
+
     /**
      * The server that handles the http response.
      */
@@ -207,6 +214,24 @@ public class HttpResponse implements Response {
     }
 
     /**
+     * Respond to the request with a data transfer object.
+     * @param object response object
+     * @param <T> object type
+     * @throws IOException error whilst sending
+     */
+    @Override
+    public <T> void sendObject(T object) throws IOException {
+        // check if the object is not a transfer object
+        if (!object.getClass().isAnnotationPresent(Dto.class))
+            throw new IllegalArgumentException(
+                "Cannot send non-transfer-object as response for security reasons. " +
+                "If you are sure this is safe, annotate the class with @Dto."
+            );
+        // serialize the object to json
+        send(gson.toJson(object), MIMEType.JSON);
+    }
+
+    /**
      * Respond to the request with a template.
      * @param template server template
      * @param placeholders template placeholders
@@ -217,9 +242,8 @@ public class HttpResponse implements Response {
         String path = "./templates/" + template + ".html";
         String content = cache ? Asset.getUTF(path) : Asset.loadUTF(path);
         // replace the template placeholders
-        for (Placeholder placeholder : placeholders) {
+        for (Placeholder placeholder : placeholders)
             content = content.replace(placeholder.getKey(), placeholder.getValue());
-        }
         // send the built template
         send(content, MIMEType.HTML);
     }

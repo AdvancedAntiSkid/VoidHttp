@@ -74,6 +74,14 @@ public interface Response {
     void sendError(Throwable error) throws IOException;
 
     /**
+     * Respond to the request with a data transfer object.
+     * @param object response object
+     * @param <T> object type
+     * @throws IOException error whilst sending
+     */
+    <T> void sendObject(T object) throws IOException;
+
+    /**
      * Respond to the request with a template.
      * @param template server template
      * @param placeholders template placeholders
