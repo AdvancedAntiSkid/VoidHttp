@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Represents a HTTP header manager.
+ * Represents an HTTP header manager.
  */
 public interface Headers {
     /**
@@ -47,12 +47,6 @@ public interface Headers {
      * @param value header value
      */
     void addIfAbsent(String key, Object value);
-
-    /**
-     * Register a new header.
-     * @param header header to register
-     */
-    void add(Header header);
 
     /**
      * Remove a header from the registry.

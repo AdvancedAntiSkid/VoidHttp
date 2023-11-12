@@ -5,7 +5,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Represents a HTTP header manager.
+ * Represents an HTTP header manager.
  */
 public class HttpHeaders implements Headers {
     /**
@@ -17,9 +17,8 @@ public class HttpHeaders implements Headers {
      * Initialize HTTP headers.
      * @param headers header registry
      */
-    public HttpHeaders(List<Header> headers) {
-        for (Header header : headers)
-            this.headers.put(header.key(), header.value());
+    public HttpHeaders(Map<String, String> headers) {
+        this.headers.putAll(headers);
     }
 
     /**
@@ -84,15 +83,6 @@ public class HttpHeaders implements Headers {
     }
 
     /**
-     * Register a new header.
-     * @param header header to register
-     */
-    @Override
-    public void add(Header header) {
-        headers.put(header.key(), header.value());
-    }
-
-    /**
      * Remove a header from the registry.
      * @param key header key
      * @return header was removed
@@ -129,7 +119,7 @@ public class HttpHeaders implements Headers {
      */
     public static Headers parse(List<String> data) {
         // declare a list for parsed headers
-        List<Header> headers = new ArrayList<>();
+        Map<String, String> headers = new HashMap<>();
         // loop through the raw headers data
         for (String header : data) {
             // get the index of the first colon
@@ -138,7 +128,7 @@ public class HttpHeaders implements Headers {
             String key = header.substring(0, index);
             String value = header.substring(index + 2);
             // register the header
-            headers.add(new Header(key, value));
+            headers.put(key, value);
         }
         // create new headers
         return new HttpHeaders(headers);
@@ -149,6 +139,6 @@ public class HttpHeaders implements Headers {
      * @return empty header registry
      */
     public static Headers empty() {
-        return new HttpHeaders(new ArrayList<>());
+        return new HttpHeaders(new HashMap<>());
     }
 }
