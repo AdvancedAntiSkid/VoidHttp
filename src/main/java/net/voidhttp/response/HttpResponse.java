@@ -26,13 +26,13 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 /**
- * Represents a HTTP server response to a client HTTP request.
+ * Represents an HTTP server response to a client HTTP request.
  */
 public class HttpResponse implements Response {
     /**
      * The json serializer and deserializer.
      */
-    private static Gson gson = new Gson();
+    private static final Gson gson = new Gson();
 
     /**
      * The server that handles the http response.

@@ -11,7 +11,7 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Represents a HTTP server response to a client HTTP request.
+ * Represents an HTTP server response to a client HTTP request.
  */
 public interface Response {
     /**

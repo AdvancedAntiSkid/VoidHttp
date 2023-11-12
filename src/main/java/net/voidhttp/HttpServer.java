@@ -94,7 +94,7 @@ public class HttpServer {
     }
 
     /**
-     * Inject a http route controller into the server.
+     * Inject an HTTP route controller into the server.
      * @param controller controller to inject
      * @param <T> type of the controller
      */
@@ -141,12 +141,14 @@ public class HttpServer {
         // check if the server is already running
         if (running)
             throw new IllegalStateException("Server is already running");
+
         // create a new server socket
         try (ServerSocket server = new ServerSocket(port)) {
             running = true;
             // notify startup actions
             for (Runnable action : actions)
                 action.run();
+
             // start listening for requests
             while (running) {
                 // accept the next client connection
@@ -171,17 +173,24 @@ public class HttpServer {
             // create the request and the response
             HttpRequest request = new HttpRequest(socket);
             HttpResponse response = new HttpResponse(this, socket);
-            // open the request
-            request.open(((method, url) -> {
-                // create the execution context wrapper
-                Context context = new Context(request, response, method, url);
-                // handle the parsed request
-                try {
-                    handleRequest(context);
-                } catch (Exception e) {
-                    router.handleError(context, e);
-                }
-            }));
+
+            // create the execution context wrapper
+            Context context = new Context(request, response);
+
+            try {
+                // read the request from the incoming socket
+                request.open();
+
+                // update the request data
+                context.setMethod(request.method());
+                context.setUrl(request.route());
+
+                // let the router handle the request
+                handleRequest(context);
+            } catch (Exception e) {
+                // redirect the error to the router, let implementation handle it
+                router.handleError(context, e);
+            }
         });
     }
 
@@ -209,11 +218,14 @@ public class HttpServer {
         // extract the request and response of the context
         HttpRequest request = context.getRequest();
         HttpResponse response = context.getResponse();
+
         // get the necessary request data
         Method method = request.method();
         String url = request.route();
+
         // preprocess the router middlewares
         router.preprocess(context);
+
         // get the list of routes corresponding for the method
         List<Route> routes = router.getRoutes(method);
         // check if there aren't any handlers for the method
@@ -221,6 +233,7 @@ public class HttpServer {
             router.handleNotFound(context);
             return;
         }
+
         // declare a variable for determining if the request was handled or not
         // so we can send a 404 error
         boolean handled = false;
@@ -240,6 +253,7 @@ public class HttpServer {
             handled = true;
             request.reset();
         }
+
         // check for 404 error handlers that will override
         // this is the default "not found" handler
         if (!handled)
