@@ -4,8 +4,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
- * Represents a HTTP response cookie.
- * For further information: https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies.
+ * Represents an HTTP response cookie.
+ * For further information: <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies">Cookies Docs</a>.
  */
 public class Cookie {
     /**

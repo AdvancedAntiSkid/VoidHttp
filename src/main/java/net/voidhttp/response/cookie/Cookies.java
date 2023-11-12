@@ -5,7 +5,7 @@ import net.voidhttp.header.Headers;
 import java.util.List;
 
 /**
- * Represents a HTTP response cookie manager.
+ * Represents an HTTP response cookie manager.
  */
 public interface Cookies {
     /**

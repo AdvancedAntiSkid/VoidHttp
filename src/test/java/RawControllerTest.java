@@ -129,13 +129,13 @@ public class RawControllerTest {
 
                 else if (annotation.annotationType() == Req.class) {
                     if (!HttpRequest.class.isAssignableFrom(type))
-                        throw new IllegalArgumentException("Handler annotated with @Req must be a HttpRequest");
+                        throw new IllegalArgumentException("Handler annotated with @Req must be an HttpRequest");
                     parameters.add(new ParameterHandler(HandlerType.REQUEST, type));
                 }
 
                 else if (annotation.annotationType() == Res.class) {
                     if (!HttpResponse.class.isAssignableFrom(type))
-                        throw new IllegalArgumentException("Handler annotated with @Res must be a HttpResponse");
+                        throw new IllegalArgumentException("Handler annotated with @Res must be an HttpResponse");
                     parameters.add(new ParameterHandler(HandlerType.RESPONSE, type));
                 }
 

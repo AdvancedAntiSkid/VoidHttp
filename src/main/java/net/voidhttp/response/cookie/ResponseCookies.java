@@ -1,26 +1,20 @@
 package net.voidhttp.response.cookie;
 
+import lombok.RequiredArgsConstructor;
 import net.voidhttp.header.Headers;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents a HTTP response cookie manager.
+ * Represents an HTTP response cookie manager.
  */
+@RequiredArgsConstructor
 public class ResponseCookies implements Cookies {
     /**
      * The list of cookies to be set in the response.
      */
     private final List<Cookie> cookies;
-
-    /**
-     * Initialize response cookies.
-     * @param cookies cookies to be set
-     */
-    public ResponseCookies(List<Cookie> cookies) {
-        this.cookies = cookies;
-    }
 
     /**
      * Initialize response cookies.
@@ -36,8 +30,11 @@ public class ResponseCookies implements Cookies {
      */
     @Override
     public Cookie get(String name) {
-        return cookies.stream().filter(cookie -> cookie.getName().equals(name))
-            .findFirst().orElse(null);
+        return cookies
+            .stream()
+            .filter(cookie -> cookie.getName().equals(name))
+            .findFirst()
+            .orElse(null);
     }
 
     /**

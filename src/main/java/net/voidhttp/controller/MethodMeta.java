@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import net.voidhttp.request.Method;
 
 /**
- * Represents a http method metadata information wrapper.
+ * Represents an HTTP method metadata information wrapper.
  */
 @RequiredArgsConstructor
 @Getter

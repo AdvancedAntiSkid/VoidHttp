@@ -1,7 +1,7 @@
 package net.voidhttp.request.cookie;
 
 /**
- * Represents a HTTP request cookie manager.
+ * Represents an HTTP request cookie manager.
  */
 public interface Cookies {
     /**

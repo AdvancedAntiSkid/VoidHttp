@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Represents a HTTP request cookie manager.
+ * Represents an HTTP request cookie manager.
  */
 public class RequestCookies implements Cookies {
     /**
