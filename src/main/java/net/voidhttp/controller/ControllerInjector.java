@@ -111,54 +111,56 @@ public class ControllerInjector {
 
             // resolve the middleware class from the annotation
             UseGuard guard = (UseGuard) annotation;
-            Middleware middleware;
             try {
                 // instantiate the middleware class
                 Class<?> clazz = guard.value();
 
+                // handle interface-based middleware
                 if (Middleware.class.isAssignableFrom(clazz)) {
-                    Constructor<?> constructor = clazz.getDeclaredConstructor();
-                    constructor.setAccessible(true);
-                    middleware = (Middleware) constructor.newInstance();
-                } else {
-                    // check if the class is annotated with @Preprocess
-                    Guard preprocess = clazz.getAnnotation(Guard.class);
-                    if (preprocess == null)
-                        throw new IllegalArgumentException("Guard does not annotate @Middleware");
-
-                    // resolve the handler method of the middleware class
-                    Method handlerMethod = null;
-                    for (Method declaredMethod : clazz.getDeclaredMethods()) {
-                        if (!declaredMethod.isAnnotationPresent(Handler.class))
-                            continue;
-                        handlerMethod = declaredMethod;
-                        break;
-                    }
-
-                    // check if there is no handler method of the middleware
-                    if (handlerMethod == null)
-                        throw new IllegalArgumentException("Guard does have any methods annotated with @Handler");
-
                     // instantiate the middleware class
                     Constructor<?> constructor = clazz.getDeclaredConstructor();
                     constructor.setAccessible(true);
 
-                    Object handler = constructor.newInstance();
-
-                    // resole the metadata of the method parameters
-                    List<ParameterMeta> metaList = ParameterMeta.resolve(handlerMethod);
-
-                    // create a middleware hook that will invoke the middleware with the
-                    // transformed arguments specified by their parameter annotations
-                    middleware = createHook(handlerMethod, metaList, handler, true);
+                    // register the interface-based middleware
+                    middlewares.add((Middleware) constructor.newInstance());
+                    continue;
                 }
 
+                // handle modern, NestJS-like middlewares, that uses annotations
+
+                // check if the class is not annotated with @Preprocess
+                Guard preprocess = clazz.getAnnotation(Guard.class);
+                if (preprocess == null)
+                    throw new IllegalArgumentException("Guard does not annotate @Guard");
+
+                // resolve the handler method of the middleware class
+                Method handlerMethod = null;
+                for (Method declaredMethod : clazz.getDeclaredMethods()) {
+                    if (!declaredMethod.isAnnotationPresent(Handler.class))
+                        continue;
+                    handlerMethod = declaredMethod;
+                    break;
+                }
+
+                // check if there is no handler method of the middleware
+                if (handlerMethod == null)
+                    throw new IllegalArgumentException("Guard does have any methods annotated with @Handler");
+
+                // instantiate the middleware class
+                Constructor<?> constructor = clazz.getDeclaredConstructor();
+                constructor.setAccessible(true);
+
+                Object handler = constructor.newInstance();
+
+                // resole the metadata of the method parameters
+                List<ParameterMeta> metaList = ParameterMeta.resolve(handlerMethod);
+
+                // create a middleware hook that will invoke the middleware with the
+                // transformed arguments specified by their parameter annotations
+                middlewares.add(createHook(handlerMethod, metaList, handler, true));
             } catch (Exception e) {
                 e.printStackTrace();
-                continue;
             }
-            // add the middleware to the list
-            middlewares.add(middleware);
         }
         return middlewares;
     }
@@ -305,9 +307,9 @@ public class ControllerInjector {
         Set<MethodMeta> methods = new HashSet<>();
         // loop through the non-inherited annotations of the class method
         for (Annotation annotation : method.getDeclaredAnnotations()) {
-            // check if the annotation is a http method annotation
+            // check if the annotation is an http method annotation
             for (Class<?> type : METHOD_TYPES) {
-                // ignore the annotation if it is not a http method annotation
+                // ignore the annotation if it is not an http method annotation
                 if (!annotation.annotationType().equals(type))
                     continue;
 
