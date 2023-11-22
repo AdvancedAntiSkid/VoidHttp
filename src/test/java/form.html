@@ -1,0 +1,24 @@
+<!doctype HTML>
+<head>
+    <title>Form</title>
+    <meta charset="utf-8">
+    <meta name="color-scheme" content="dark light">
+</head>
+<body>
+<h1>Upload a file</h1>
+    <form method="POST" action="http://localhost/test" enctype="multipart/form-data">
+        <input type="file" name="avatar" />
+        <br>
+        <label>
+            name
+            <input type="text" name="name-val" />
+        </label>
+        <br>
+        <label>
+            email
+            <input type="email" name="email-val" />
+        </label>
+        <br>
+        <input type="submit" value="Upload" />
+    </form>
+</body>
