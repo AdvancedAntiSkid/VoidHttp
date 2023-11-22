@@ -1,5 +1,6 @@
 package net.voidhttp.router;
 
+import lombok.Getter;
 import net.voidhttp.config.Flag;
 import net.voidhttp.request.Request;
 import net.voidhttp.request.query.RequestQuery;
@@ -18,6 +19,7 @@ public class Route {
     /**
      * The request route url;
      */
+    @Getter
     private final String route;
 
     /**
@@ -103,13 +105,6 @@ public class Route {
                 }
             }
         }
-    }
-
-    /**
-     * The request route url;
-     */
-    public String getRoute() {
-        return route;
     }
 
     /**

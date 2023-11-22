@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import net.voidhttp.header.Headers;
 import net.voidhttp.request.cookie.Cookies;
 import net.voidhttp.request.data.Data;
+import net.voidhttp.request.form.MultipartForm;
 import net.voidhttp.request.parameter.Parameters;
 import net.voidhttp.request.query.Query;
 import net.voidhttp.request.session.Session;
@@ -70,6 +71,11 @@ public interface Request {
      * Get the request body json.
      */
     JsonObject json();
+
+    /**
+     * Get the parsed multipart/form-data body of the request.
+     */
+    MultipartForm multipart();
 
     /**
      * Get the request parameters.

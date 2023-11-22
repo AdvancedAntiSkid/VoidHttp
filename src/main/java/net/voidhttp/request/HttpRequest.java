@@ -4,12 +4,17 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.SneakyThrows;
 import net.voidhttp.header.Headers;
 import net.voidhttp.header.HttpHeaders;
 import net.voidhttp.request.cookie.Cookies;
 import net.voidhttp.request.cookie.RequestCookies;
 import net.voidhttp.request.data.Data;
 import net.voidhttp.request.data.RequestData;
+import net.voidhttp.request.form.FormEntry;
+import net.voidhttp.request.form.MultipartForm;
+import net.voidhttp.request.form.RequestFormEntry;
+import net.voidhttp.request.form.RequestMultipartForm;
 import net.voidhttp.request.parameter.Parameters;
 import net.voidhttp.request.parameter.RequestParameters;
 import net.voidhttp.request.query.Query;
@@ -17,6 +22,7 @@ import net.voidhttp.request.query.RequestQuery;
 import net.voidhttp.request.session.Session;
 
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -65,6 +71,7 @@ public class HttpRequest implements Request {
      */
     private Headers headers;
 
+
     /**
      * The registry of the request cookies.
      */
@@ -84,6 +91,11 @@ public class HttpRequest implements Request {
      * The json body of the request.
      */
     private JsonObject json;
+
+    /**
+     * Get the parsed multipart/form-data body of the request.
+     */
+    private MultipartForm multipart;
 
     /**
      * The current session of the request.
@@ -158,26 +170,95 @@ public class HttpRequest implements Request {
         // create request transfer data holder
         data = new RequestData();
 
+        // get the type of the data sent
+        String contentType = headers.get("content-type");
+
+        // handle multipart/form-data request body parsing
+        // sadly in this case, the content length is not guaranteed, therefore we have to separately parse the body
+        if (contentType != null && contentType.startsWith("multipart/form-data")) {
+            // get the boundary of the multipart/form-data body that will indicate
+            // how the form entries should be separated and when the body ends
+            String boundary = contentType.split(";")[1].split("=")[1];
+
+            // parse the multipart/form-data body
+            parseMultipartData(reader, boundary);
+            return;
+        }
+
+        // TODO: parse application/x-www-form-urlencoded
+        // else if (contentType != null && contentType.startsWith("application/x-www-form-urlencoded")) {
+        //     return;
+        // }
+
         // get the length of the body
         // read the body of the request
         String contentLength = headers.get("Content-Length");
         if (contentLength != null) {
-            StringBuilder builder = new StringBuilder();
             int length = Integer.parseInt(contentLength);
+            System.out.println("length: " + length);
+
+            StringBuilder builder = new StringBuilder();
             // read the remaining parts of the request content
-            for (int i = 0; i < length; i++)
-                builder.append((char) reader.read());
+            for (int i = 0; i < length; i++) {
+                char read = (char) reader.read();
+                builder.append(read);
+                System.out.print(read);
+            }
             body = builder.toString();
         }
 
         // get the type of the requested content
-        String contentType = headers.get("content-type");
         if (contentType != null && contentType.startsWith("application/json")) {
             // parse the request body to json
             try {
                 json = (JsonObject) JsonParser.parseString(body);
             } catch (Exception ignored) {}
         }
+
+        System.out.println("\n\nrequest done");
+    }
+
+    /**
+     * Parse the multipart/form-data body of the request. Unfortunately, multipart/form-data does not guarantee
+     * a proper content length, so we have to read lines until we find the boundary and a <code>--</code> suffix.
+     * @param reader reader of the request body
+     * @param boundary boundary of the multipart/form-data body
+     */
+    @SneakyThrows
+    private void parseMultipartData(BufferedReader reader, String boundary) {
+        boolean started = false;
+
+        List<String> lines = new ArrayList<>();
+        List<FormEntry> entries = new ArrayList<>();
+
+        // read all the available lines from the connecting socket
+        String line;
+        while ((line = reader.readLine()) != null) {
+            // check if a new form entry has started
+            if (line.equals("--" + boundary)) {
+                // indicate, that the first form entry has started
+                if (!started)
+                    started = true;
+                // if the form entries have already started, parse the previous one
+                else {
+                    entries.add(RequestFormEntry.parse(lines));
+                    lines = new ArrayList<>();
+                }
+            }
+
+            // check if the form entries have ended
+            else if (line.equals("--" + boundary + "--")) {
+                // parse the last form entry and stop reading
+                entries.add(RequestFormEntry.parse(lines));
+                break;
+            }
+
+            // if the form entries have started, add the line to the current form entry
+            else
+                lines.add(line);
+        }
+
+        multipart = new RequestMultipartForm(entries);
     }
 
     /**
@@ -268,6 +349,14 @@ public class HttpRequest implements Request {
     @Override
     public JsonObject json() {
         return json;
+    }
+
+    /**
+     * Get the parsed multipart/form-data body of the request.
+     */
+    @Override
+    public MultipartForm multipart() {
+        return multipart;
     }
 
     /**

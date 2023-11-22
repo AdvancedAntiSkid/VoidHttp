@@ -139,7 +139,7 @@ public class Router {
         if (!handled) {
             try {
                 response.status(404).send("<pre>" + "Cannot " + context.getMethod() + " " + context.getUrl() + "</pre>");
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
