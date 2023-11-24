@@ -1,5 +1,7 @@
 package net.voidhttp.request.form;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Map;
 
 /**
@@ -10,17 +12,17 @@ public interface FormEntry {
      * Get the headers of the entry.
      * @return form entry headers
      */
-    Map<String, String> headers();
+    @NotNull Map<String, String> headers();
 
     /**
      * Get the name of the entry.
      * @return form entry name
      */
-    String name();
+    @NotNull String name();
 
     /**
      * Get the data of the entry.
      * @return form entry data
      */
-    String data();
+    @NotNull String data();
 }

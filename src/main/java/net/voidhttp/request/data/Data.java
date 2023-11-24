@@ -1,5 +1,8 @@
 package net.voidhttp.request.data;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Represents a request data manager that can be used to pass data between request handlers.
  */
@@ -9,7 +12,7 @@ public interface Data {
      * @param key data key
      * @return data exists
      */
-    boolean has(String key);
+    boolean has(@NotNull String key);
 
     /**
      * Get a T value from the data registry.
@@ -18,7 +21,7 @@ public interface Data {
      * @param <T> data type
      * @return data value
      */
-    <T> T get(String key, T defaultValue);
+    @NotNull <T> T get(@NotNull String key, @NotNull T defaultValue);
 
     /**
      * Get a T value from the data registry.
@@ -26,7 +29,7 @@ public interface Data {
      * @param <T> data type
      * @return data value
      */
-    <T> T get(String key);
+    @Nullable <T> T get(@NotNull String key);
 
     /**
      * Get a T value from the data registry.
@@ -36,7 +39,7 @@ public interface Data {
      * @param <T> data type
      * @return data value
      */
-    <T> T get(String key, Class<T> type, T defaultValue);
+    @NotNull <T> T get(@NotNull String key, @NotNull Class<T> type, @NotNull T defaultValue);
 
     /**
      * Get a T value from the data registry.
@@ -45,7 +48,7 @@ public interface Data {
      * @param <T> data type
      * @return data value
      */
-    <T> T get(String key, Class<T> type);
+    @Nullable <T> T get(@NotNull String key, @NotNull Class<T> type);
 
     /**
      * Get an object value from the data registry.
@@ -53,14 +56,14 @@ public interface Data {
      * @param defaultValue value to return if the key is unregistered
      * @return data value
      */
-    Object getObject(String key, Object defaultValue);
+    @NotNull Object getObject(@NotNull String key, @NotNull Object defaultValue);
 
     /**
      * Get an object value from the data registry.
      * @param key data key
      * @return data value
      */
-    Object getObject(String key);
+   @Nullable Object getObject(@NotNull String key);
 
     /**
      * Get a string value from the data registry.
@@ -68,14 +71,14 @@ public interface Data {
      * @param defaultValue value to return if the key is unregistered
      * @return data value
      */
-    String getString(String key, String defaultValue);
+    @NotNull String getString(@NotNull String key, @NotNull String defaultValue);
 
     /**
      * Get a string value from the data registry.
      * @param key data key
      * @return data value
      */
-    String getString(String key);
+    @Nullable String getString(@NotNull String key);
 
     /**
      * Get a boolean value from the data registry.
@@ -83,14 +86,14 @@ public interface Data {
      * @param defaultValue value to return if the key is unregistered
      * @return data value
      */
-    boolean getBoolean(String key, boolean defaultValue);
+    boolean getBoolean(@NotNull String key, boolean defaultValue);
 
     /**
      * Get a boolean value from the data registry.
      * @param key data key
      * @return data value
      */
-    boolean getBoolean(String key);
+    boolean getBoolean(@NotNull String key);
 
     /**
      * Get an int value from the data registry.
@@ -98,14 +101,14 @@ public interface Data {
      * @param defaultValue value to return if the key is unregistered
      * @return data value
      */
-    int getInt(String key, int defaultValue);
+    int getInt(@NotNull String key, int defaultValue);
 
     /**
      * Get an int value from the data registry.
      * @param key data key
      * @return data value
      */
-    int getInt(String key);
+    int getInt(@NotNull String key);
 
     /**
      * Get a long value from the data registry.
@@ -113,14 +116,14 @@ public interface Data {
      * @param defaultValue value to return if the key is unregistered
      * @return data value
      */
-    long getLong(String key, long defaultValue);
+    long getLong(@NotNull String key, long defaultValue);
 
     /**
      * Get a long value from the data registry.
      * @param key data key
      * @return data value
      */
-    long getLong(String key);
+    long getLong(@NotNull String key);
 
     /**
      * Get a float value from the data registry.
@@ -128,14 +131,14 @@ public interface Data {
      * @param defaultValue value to return if the key is unregistered
      * @return data value
      */
-    float getFloat(String key, float defaultValue);
+    float getFloat(@NotNull String key, float defaultValue);
 
     /**
      * Get a float value from the data registry.
      * @param key data key
      * @return data value
      */
-    float getFloat(String key);
+    float getFloat(@NotNull String key);
 
     /**
      * Get a double value from the data registry.
@@ -143,14 +146,14 @@ public interface Data {
      * @param defaultValue value to return if the key is unregistered
      * @return data value
      */
-    double getDouble(String key, double defaultValue);
+    double getDouble(@NotNull String key, double defaultValue);
 
     /**
      * Get a double value from the data registry.
      * @param key data key
      * @return data value
      */
-    double getDouble(String key);
+    double getDouble(@NotNull String key);
 
     /**
      * Set the value of the given key.
@@ -159,7 +162,7 @@ public interface Data {
      * @param <T> data type
      * @return previous data stored with this key
      */
-    <T> T set(String key, T value);
+    <T> @Nullable T set(@NotNull String key, @NotNull T value);
 
     /**
      * Set the value of the given key if the key is already registered.
@@ -168,7 +171,7 @@ public interface Data {
      * @param <T> data type
      * @return previous data stored with this key
      */
-    <T> T setIfPresent(String key, T value);
+    <T> @Nullable T setIfPresent(@NotNull String key, @NotNull T value);
 
     /**
      * Set the value of the given key if the key is not registered yet.
@@ -177,7 +180,7 @@ public interface Data {
      * @param <T> data type
      * @return previous data stored with this key
      */
-    <T> T setIfAbsent(String key, T value);
+    <T> @Nullable T setIfAbsent(@NotNull String key, @NotNull T value);
 
     /**
      * Remove a data from the registry.
@@ -185,7 +188,7 @@ public interface Data {
      * @param <T> data type
      * @return removed data value
      */
-    <T> T remove(String key);
+    <T> @Nullable T remove(@NotNull String key);
 
     /**
      * Clear all the registered values.

@@ -1,5 +1,8 @@
 package net.voidhttp.request.data;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,7 +23,7 @@ public class RequestData implements Data {
      * @return data exists
      */
     @Override
-    public boolean has(String key) {
+    public boolean has(@NotNull String key) {
         return registry.containsKey(key);
     }
 
@@ -32,7 +35,7 @@ public class RequestData implements Data {
      */
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T get(String key, T defaultValue) {
+    public <T> @NotNull T get(@NotNull String key, @NotNull T defaultValue) {
         return (T) registry.getOrDefault(key, defaultValue);
     }
 
@@ -43,7 +46,7 @@ public class RequestData implements Data {
      */
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T get(String key) {
+    public @Nullable <T> T get(@NotNull String key) {
         return (T) registry.get(key);
     }
 
@@ -56,7 +59,7 @@ public class RequestData implements Data {
      * @return data value
      */
     @Override
-    public <T> T get(String key, Class<T> type, T defaultValue) {
+    public <T> @NotNull T get(@NotNull String key, @NotNull Class<T> type, @NotNull T defaultValue) {
         return type.cast(registry.getOrDefault(key, defaultValue));
     }
 
@@ -68,8 +71,8 @@ public class RequestData implements Data {
      * @return data value
      */
     @Override
-    public <T> T get(String key, Class<T> type) {
-        return get(key, type, null);
+    public @Nullable <T> T get(@NotNull String key, @NotNull Class<T> type) {
+        return type.cast(registry.get(key));
     }
 
     /**
@@ -79,7 +82,7 @@ public class RequestData implements Data {
      * @return data value
      */
     @Override
-    public Object getObject(String key, Object defaultValue) {
+    public @NotNull Object getObject(@NotNull String key, @NotNull Object defaultValue) {
         return registry.getOrDefault(key, defaultValue);
     }
 
@@ -89,8 +92,8 @@ public class RequestData implements Data {
      * @return data value
      */
     @Override
-    public Object getObject(String key) {
-        return getObject(key, null);
+    public @Nullable Object getObject(@NotNull String key) {
+        return registry.get(key);
     }
 
     /**
@@ -100,7 +103,7 @@ public class RequestData implements Data {
      * @return data value
      */
     @Override
-    public String getString(String key, String defaultValue) {
+    public @NotNull String getString(@NotNull String key, @NotNull String defaultValue) {
         return (String) registry.getOrDefault(key, defaultValue);
     }
 
@@ -110,8 +113,8 @@ public class RequestData implements Data {
      * @return data value
      */
     @Override
-    public String getString(String key) {
-        return getString(key, null);
+    public @Nullable String getString(@NotNull String key) {
+        return (String) registry.get(key);
     }
 
     /**
@@ -121,7 +124,7 @@ public class RequestData implements Data {
      * @return data value
      */
     @Override
-    public boolean getBoolean(String key, boolean defaultValue) {
+    public boolean getBoolean(@NotNull String key, boolean defaultValue) {
         Object value = registry.getOrDefault(key, defaultValue);
         if (!(value instanceof Boolean))
             return false;
@@ -134,7 +137,7 @@ public class RequestData implements Data {
      * @return data value
      */
     @Override
-    public boolean getBoolean(String key) {
+    public boolean getBoolean(@NotNull String key) {
         return getBoolean(key, false);
     }
 
@@ -145,7 +148,7 @@ public class RequestData implements Data {
      * @return data value
      */
     @Override
-    public int getInt(String key, int defaultValue) {
+    public int getInt(@NotNull String key, int defaultValue) {
         Object value = registry.getOrDefault(key, defaultValue);
         if (!(value instanceof Integer))
             return 0;
@@ -158,7 +161,7 @@ public class RequestData implements Data {
      * @return data value
      */
     @Override
-    public int getInt(String key) {
+    public int getInt(@NotNull String key) {
         return getInt(key, 0);
     }
 
@@ -169,7 +172,7 @@ public class RequestData implements Data {
      * @return data value
      */
     @Override
-    public long getLong(String key, long defaultValue) {
+    public long getLong(@NotNull String key, long defaultValue) {
         Object value = registry.getOrDefault(key, defaultValue);
         if (!(value instanceof Long))
             return 0L;
@@ -182,7 +185,7 @@ public class RequestData implements Data {
      * @return data value
      */
     @Override
-    public long getLong(String key) {
+    public long getLong(@NotNull String key) {
         return getLong(key, 0L);
     }
 
@@ -193,7 +196,7 @@ public class RequestData implements Data {
      * @return data value
      */
     @Override
-    public float getFloat(String key, float defaultValue) {
+    public float getFloat(@NotNull String key, float defaultValue) {
         Object value = registry.getOrDefault(key, defaultValue);
         if (!(value instanceof Float))
             return 0F;
@@ -206,7 +209,7 @@ public class RequestData implements Data {
      * @return data value
      */
     @Override
-    public float getFloat(String key) {
+    public float getFloat(@NotNull String key) {
         return getFloat(key, 0F);
     }
 
@@ -217,7 +220,7 @@ public class RequestData implements Data {
      * @return data value
      */
     @Override
-    public double getDouble(String key, double defaultValue) {
+    public double getDouble(@NotNull String key, double defaultValue) {
         Object value = registry.getOrDefault(key, defaultValue);
         if (!(value instanceof Double))
             return 0D;
@@ -230,7 +233,7 @@ public class RequestData implements Data {
      * @return data value
      */
     @Override
-    public double getDouble(String key) {
+    public double getDouble(@NotNull String key) {
         return getDouble(key, 0D);
     }
 
@@ -242,7 +245,7 @@ public class RequestData implements Data {
      */
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T set(String key, T value) {
+    public <T> @Nullable T set(@NotNull String key, @NotNull T value) {
         return (T) registry.put(key, value);
     }
 
@@ -253,7 +256,7 @@ public class RequestData implements Data {
      * @return previous data stored with this key
      */
     @Override
-    public <T> T setIfPresent(String key, T value) {
+    public <T> @Nullable T setIfPresent(@NotNull String key, @NotNull T value) {
         return has(key) ? set(key, value) : null;
     }
 
@@ -264,7 +267,7 @@ public class RequestData implements Data {
      * @return previous data stored with this key
      */
     @Override
-    public <T> T setIfAbsent(String key, T value) {
+    public <T> @Nullable T setIfAbsent(@NotNull String key, @NotNull T value) {
         return !has(key) ? set(key, value) : null;
     }
 
@@ -275,7 +278,7 @@ public class RequestData implements Data {
      */
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T remove(String key) {
+    public <T> @Nullable T remove(@NotNull String key) {
         return (T) registry.remove(key);
     }
 

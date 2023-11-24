@@ -1,22 +1,28 @@
 package net.voidhttp.request.query;
 
+import lombok.ToString;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Represents a holder of the request url query.
  */
+@ToString
 public class RequestQuery implements Query {
     /**
      * The registry of the request url query placeholders.
      */
+    @NotNull
     private final Map<String, String> query;
 
     /**
      * Initialize request query.
      * @param query query data
      */
-    public RequestQuery(Map<String, String> query) {
+    public RequestQuery(@NotNull Map<String, String> query) {
         this.query = query;
     }
 
@@ -33,7 +39,7 @@ public class RequestQuery implements Query {
      * @return query exists
      */
     @Override
-    public boolean has(String key) {
+    public boolean has(@NotNull String key) {
         return query.containsKey(key);
     }
 
@@ -42,7 +48,7 @@ public class RequestQuery implements Query {
      * @param key key to update
      * @param value key value
      */
-    public void set(String key, String value) {
+    public void set(@NotNull String key, @NotNull String value) {
         query.put(key, value);
     }
 
@@ -52,7 +58,7 @@ public class RequestQuery implements Query {
      * @return query value
      */
     @Override
-    public String get(String key) {
+    public @Nullable String get(@NotNull String key) {
         return query.get(key);
     }
 
@@ -64,14 +70,7 @@ public class RequestQuery implements Query {
      * @return query value
      */
     @Override
-    public String getOrDefault(String key, String defaultValue) {
+    public @NotNull String getOrDefault(@NotNull String key, @NotNull String defaultValue) {
         return query.getOrDefault(key, defaultValue);
-    }
-
-    @Override
-    public String toString() {
-        return "RequestQuery{" +
-            "query=" + query +
-            '}';
     }
 }

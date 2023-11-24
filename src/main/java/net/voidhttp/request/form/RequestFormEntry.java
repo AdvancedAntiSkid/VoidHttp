@@ -2,6 +2,7 @@ package net.voidhttp.request.form;
 
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -31,7 +32,7 @@ public class RequestFormEntry implements FormEntry {
      * @return form entry headers
      */
     @Override
-    public Map<String, String> headers() {
+    public @NotNull Map<String, String> headers() {
         return headers;
     }
 
@@ -40,7 +41,7 @@ public class RequestFormEntry implements FormEntry {
      * @return form entry data
      */
     @Override
-    public String data() {
+    public @NotNull String data() {
         return data;
     }
 
@@ -49,7 +50,7 @@ public class RequestFormEntry implements FormEntry {
      * @return form entry name
      */
     @Override
-    public String name() {
+    public @NotNull String name() {
         return name;
     }
 

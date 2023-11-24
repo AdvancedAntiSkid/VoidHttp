@@ -1,5 +1,8 @@
 package net.voidhttp.request.parameter;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Represents a manager of HTTP request parameters.
  */
@@ -9,14 +12,14 @@ public interface Parameters {
      * @param key parameter key
      * @return parameter exists
      */
-    boolean has(String key);
+    boolean has(@NotNull String key);
 
     /**
      * Get the value of the given parameter.
      * @param key parameter key
      * @return parameter value
      */
-    String get(String key);
+    @Nullable String get(@NotNull String key);
 
     /**
      * Get the value of the given parameter or a
@@ -25,5 +28,5 @@ public interface Parameters {
      * @param defaultValue default value to return if the parameter is missing
      * @return parameter value
      */
-    String getOrDefault(String key, String defaultValue);
+    @NotNull String getOrDefault(@NotNull String key, @NotNull String defaultValue);
 }

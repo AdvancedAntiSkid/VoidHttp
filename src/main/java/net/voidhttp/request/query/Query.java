@@ -1,5 +1,8 @@
 package net.voidhttp.request.query;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Represents a holder of the request url query.
  */
@@ -9,14 +12,14 @@ public interface Query {
      * @param key query key
      * @return query exists
      */
-    boolean has(String key);
+    boolean has(@NotNull String key);
 
     /**
      * Get the value of the given query key.
      * @param key query key
      * @return query value
      */
-    String get(String key);
+    @Nullable String get(@NotNull String key);
 
     /**
      * Get the value of the given query key or a
@@ -25,5 +28,5 @@ public interface Query {
      * @param defaultValue default value to return if the query key is missing
      * @return query value
      */
-    String getOrDefault(String key, String defaultValue);
+    @NotNull String getOrDefault(@NotNull String key, @NotNull String defaultValue);
 }

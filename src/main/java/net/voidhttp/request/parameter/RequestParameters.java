@@ -1,11 +1,16 @@
 package net.voidhttp.request.parameter;
 
+import lombok.ToString;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Represents a manager of HTTP request parameters.
  */
+@ToString
 public class RequestParameters implements Parameters {
     /**
      * The registry of the request url parameters.
@@ -26,7 +31,7 @@ public class RequestParameters implements Parameters {
      * @return parameter exists
      */
     @Override
-    public boolean has(String key) {
+    public boolean has(@NotNull String key) {
         return parameters.containsKey(key);
     }
 
@@ -36,7 +41,7 @@ public class RequestParameters implements Parameters {
      * @return parameter value
      */
     @Override
-    public String get(String key) {
+    public @Nullable String get(@NotNull String key) {
         return parameters.get(key);
     }
 
@@ -48,18 +53,8 @@ public class RequestParameters implements Parameters {
      * @return parameter value
      */
     @Override
-    public String getOrDefault(String key, String defaultValue) {
+    public @NotNull String getOrDefault(@NotNull String key, @NotNull String defaultValue) {
         return parameters.getOrDefault(key, defaultValue);
-    }
-
-    /**
-     * Debug the request parameters.
-     */
-    @Override
-    public String toString() {
-        return "RequestParameters{" +
-            "parameters=" + parameters +
-            '}';
     }
 
     /**
@@ -86,7 +81,7 @@ public class RequestParameters implements Parameters {
      * Create an empty registry of parameters.
      * @return empty parameters registry
      */
-    public static Parameters empty() {
+    public static @NotNull Parameters empty() {
         return new RequestParameters(new HashMap<>());
     }
 }

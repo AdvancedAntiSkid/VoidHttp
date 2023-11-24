@@ -20,6 +20,8 @@ import net.voidhttp.request.parameter.RequestParameters;
 import net.voidhttp.request.query.Query;
 import net.voidhttp.request.query.RequestQuery;
 import net.voidhttp.request.session.Session;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -265,7 +267,7 @@ public class HttpRequest implements Request {
      * Get the requested url.
      */
     @Override
-    public String route() {
+    public @NotNull String route() {
         return route;
     }
 
@@ -273,7 +275,7 @@ public class HttpRequest implements Request {
      * Get the HTTP request method used.
      */
     @Override
-    public Method method() {
+    public @NotNull Method method() {
         return method;
     }
 
@@ -307,7 +309,7 @@ public class HttpRequest implements Request {
      * @return ip address
      */
     @Override
-    public InetAddress host() {
+    public @NotNull InetAddress host() {
         return host;
     }
 
@@ -315,7 +317,7 @@ public class HttpRequest implements Request {
      * Get the registry of the requested headers.
      */
     @Override
-    public Headers headers() {
+    public @NotNull Headers headers() {
         return headers;
     }
 
@@ -323,7 +325,7 @@ public class HttpRequest implements Request {
      * Get the registry of request cookies.
      */
     @Override
-    public Cookies cookies() {
+    public @NotNull Cookies cookies() {
         return cookies;
     }
 
@@ -331,7 +333,7 @@ public class HttpRequest implements Request {
      * Get the registry of the passed values.
      */
     @Override
-    public Data data() {
+    public @NotNull Data data() {
         return data;
     }
 
@@ -339,7 +341,7 @@ public class HttpRequest implements Request {
      * Get the request body content.
      */
     @Override
-    public String body() {
+    public @Nullable String body() {
         return body;
     }
 
@@ -347,7 +349,7 @@ public class HttpRequest implements Request {
      * Get the request body json.
      */
     @Override
-    public JsonObject json() {
+    public @Nullable JsonObject json() {
         return json;
     }
 
@@ -363,7 +365,7 @@ public class HttpRequest implements Request {
      * Get the request parameters.
      */
     @Override
-    public Parameters parameters() {
+    public @NotNull Parameters parameters() {
         return parameters;
     }
 
@@ -371,7 +373,7 @@ public class HttpRequest implements Request {
      * Get the current request session.
      */
     @Override
-    public Session session() {
+    public @Nullable Session session() {
         return session;
     }
 
@@ -379,7 +381,7 @@ public class HttpRequest implements Request {
      * The query data of the url.
      */
     @Override
-    public Query query() {
+    public @NotNull Query query() {
         return query;
     }
 
