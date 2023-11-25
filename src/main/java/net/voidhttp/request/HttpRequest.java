@@ -197,15 +197,10 @@ public class HttpRequest implements Request {
         String contentLength = headers.get("Content-Length");
         if (contentLength != null) {
             int length = Integer.parseInt(contentLength);
-            System.out.println("length: " + length);
-
             StringBuilder builder = new StringBuilder();
             // read the remaining parts of the request content
-            for (int i = 0; i < length; i++) {
-                char read = (char) reader.read();
-                builder.append(read);
-                System.out.print(read);
-            }
+            for (int i = 0; i < length; i++)
+                builder.append((char) reader.read());
             body = builder.toString();
         }
 
@@ -216,8 +211,6 @@ public class HttpRequest implements Request {
                 json = (JsonObject) JsonParser.parseString(body);
             } catch (Exception ignored) {}
         }
-
-        System.out.println("\n\nrequest done");
     }
 
     /**
