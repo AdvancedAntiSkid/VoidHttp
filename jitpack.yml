@@ -2,7 +2,3 @@ jdk:
   - openjdk19
 before_install:
   - ./ensure-java-19 install
-install:
-  - if ! ./ensure-java-19 use; then source ~/.sdkman/bin/sdkman-init.sh; fi
-  - java -version
-  - ./mvnw -pl gwt,default install
