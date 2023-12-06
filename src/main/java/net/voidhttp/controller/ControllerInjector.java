@@ -212,7 +212,8 @@ public class ControllerInjector {
                     try {
                         Validator.validate(value);
                     } catch (Exception e) {
-                        System.err.println(e.getMessage());
+                        System.err.println("Validation failed for " + meta.getType().getSimpleName());
+                        e.printStackTrace();
                     }
                     args[i] = value;
                 }
