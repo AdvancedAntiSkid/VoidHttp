@@ -1,2 +1,5 @@
 jdk:
   - openjdk19
+before_install:
+  - sdk install java 19.ea.1.pma-open
+  - sdk use java 19.ea.1.pma-open
