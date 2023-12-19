@@ -110,9 +110,11 @@ public class Validator {
             // handle number sign validation
             if (field.isAnnotationPresent(Signed.class)) {
                 // check if the field is not a number
-                if (!(field.get(value) instanceof Number number))
+                Object object = field.get(value);
+                if (!(object instanceof Number))
                     throw new IllegalStateException("Field " + field.getName() + " is not a number, cannot be sign tested");
 
+                Number number = (Number) object;
                 // check if the number is negative
                 if (number.longValue() < 0)
                     throw new IllegalArgumentException("Field " + field.getName() + " " + number + " is negative");
