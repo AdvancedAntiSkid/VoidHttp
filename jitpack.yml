@@ -6,6 +6,8 @@ install:
   - mvn clean install -DskipTests
 
 before_install:
-  - echo "Setting up Java 19"
-  - sdk install java 19.ea.1.pma-open
-  - sdk use java 19.ea.1.pma-open
+  - echo "Listing available Java versions"
+  - sdk list java
+#  - echo "Setting up Java 19"
+#  - sdk install java 19.ea.1.pma-open
+#  - sdk use java 19.ea.1.pma-open
