@@ -1,6 +1,10 @@
 jdk:
   - openjdk19
 
+install:
+  - echo "Running a custom install command"
+  - mvn clean install -DskipTests
+
 before_install:
   - echo "Setting up Java 19"
   - sdk install java 19.ea.1.pma-open
