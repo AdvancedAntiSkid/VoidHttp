@@ -3,11 +3,17 @@ jdk:
 
 install:
   - echo "Running a custom install command"
+  - echo "Using Java version"
+  - java -version
   - mvn clean install -DskipTests
 
 before_install:
   - echo "Listing available Java versions"
-  - sdk list java
+#  - sdk list java
+  - echo "Setting up Java 21"
+  - sdk install java 21.0.1-amzn
+  - sdk use java 21.0.1-amzn
+  - sdk update
 #  - echo "Setting up Java 19"
 #  - sdk install java 19.ea.1.pma-open
 #  - sdk use java 19.ea.1.pma-open
