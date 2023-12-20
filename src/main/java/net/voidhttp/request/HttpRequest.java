@@ -23,11 +23,10 @@ import net.voidhttp.request.session.Session;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -85,6 +84,11 @@ public class HttpRequest implements Request {
     private Data data;
 
     /**
+     * The binary body of the request.
+     */
+    private byte[] binary;
+
+    /**
      * The body of the request.
      */
     private String body;
@@ -125,14 +129,15 @@ public class HttpRequest implements Request {
      */
     public void open() throws Exception {
         // read characters from the client via input stream on the socket
-        BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        InputStream in = socket.getInputStream();
+        PushbackInputStream stream = new PushbackInputStream(in);
+
         // create a tokenizer for parsing input
-        StringTokenizer tokenizer;
-        try {
-            tokenizer = new StringTokenizer(reader.readLine());
-        } catch (NullPointerException e) {
+        String descriptor = readNextLine(stream);
+        if (descriptor == null)
             return;
-        }
+
+        StringTokenizer tokenizer = new StringTokenizer(descriptor);
 
         // determine the request method
         String methodToken = tokenizer.nextToken().toUpperCase();
@@ -152,7 +157,7 @@ public class HttpRequest implements Request {
         // read the headers of the request
         List<String> lines = new ArrayList<>();
         String line;
-        while ((line = reader.readLine()) != null) {
+        while ((line = readNextLine(stream)) != null) {
             // the headers and the request body is separated using an empty line
             // stop processing headers if the line is empty
             if (line.isEmpty())
@@ -183,7 +188,7 @@ public class HttpRequest implements Request {
             String boundary = contentType.split(";")[1].split("=")[1];
 
             // parse the multipart/form-data body
-            parseMultipartData(reader, boundary);
+            parseMultipartData(stream, boundary);
             return;
         }
 
@@ -192,16 +197,17 @@ public class HttpRequest implements Request {
         //     return;
         // }
 
-        // get the length of the body
-        // read the body of the request
+        // read the body of the request as binary
         String contentLength = headers.get("Content-Length");
         if (contentLength != null) {
             int length = Integer.parseInt(contentLength);
-            StringBuilder builder = new StringBuilder();
-            // read the remaining parts of the request content
-            for (int i = 0; i < length; i++)
-                builder.append((char) reader.read());
-            body = builder.toString();
+
+            byte[] bytes = new byte[length];
+            int read = stream.read(bytes, 0, length);
+            if (read != length)
+                throw new RuntimeException("Invalid request body length");
+
+            body = new String(bytes, StandardCharsets.UTF_8);
         }
 
         // get the type of the requested content
@@ -216,11 +222,11 @@ public class HttpRequest implements Request {
     /**
      * Parse the multipart/form-data body of the request. Unfortunately, multipart/form-data does not guarantee
      * a proper content length, so we have to read lines until we find the boundary and a <code>--</code> suffix.
-     * @param reader reader of the request body
+     * @param stream reader of the request body
      * @param boundary boundary of the multipart/form-data body
      */
     @SneakyThrows
-    private void parseMultipartData(BufferedReader reader, String boundary) {
+    private void parseMultipartData(InputStream stream, String boundary) {
         boolean started = false;
 
         List<String> lines = new ArrayList<>();
@@ -228,7 +234,7 @@ public class HttpRequest implements Request {
 
         // read all the available lines from the connecting socket
         String line;
-        while ((line = reader.readLine()) != null) {
+        while ((line = readNextLine(stream)) != null) {
             // check if a new form entry has started
             if (line.equals("--" + boundary)) {
                 // indicate, that the first form entry has started
@@ -254,6 +260,45 @@ public class HttpRequest implements Request {
         }
 
         multipart = new RequestMultipartForm(entries);
+    }
+
+    /**
+     * Read the next line from a binary input stream.
+     * @param stream reader of the request body
+     * @return the next line
+     * @throws IOException error whilst reading
+     */
+    private String readNextLine(InputStream stream) throws IOException {
+        StringBuilder builder = new StringBuilder();
+        int read;
+        boolean newLine = false;
+
+        while ((read = stream.read()) != -1) {
+            char c = (char) read;
+
+            if (c == '\n') {
+                newLine = true;
+                break;
+            } else if (c == '\r') {
+                // check for \r and handle it if encountered
+                newLine = true;
+                int nextChar = stream.read(); // read the next character after \r
+
+                if (nextChar != -1 && (char) nextChar != '\n') {
+                    // if it's not \n, put it back to the stream
+                    ((PushbackInputStream) stream).unread(nextChar);
+                }
+                break;
+            }
+
+            builder.append(c);
+        }
+
+        // return null if there's no more data to read
+        if (!newLine && builder.isEmpty())
+            return null;
+
+        return builder.toString();
     }
 
     /**
@@ -328,6 +373,14 @@ public class HttpRequest implements Request {
     @Override
     public @NotNull Data data() {
         return data;
+    }
+
+    /**
+     * Get the binary body of the request.
+     */
+    @Override
+    public byte @NotNull [] binary() {
+        return binary;
     }
 
     /**

@@ -65,6 +65,11 @@ public interface Request {
     @NotNull Data data();
 
     /**
+     * Get the binary body of the request.
+     */
+    byte @NotNull [] binary();
+
+    /**
      * Get the request body content.
      */
     @Nullable String body();
