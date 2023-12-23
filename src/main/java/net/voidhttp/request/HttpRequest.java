@@ -20,6 +20,7 @@ import net.voidhttp.request.parameter.RequestParameters;
 import net.voidhttp.request.query.Query;
 import net.voidhttp.request.query.RequestQuery;
 import net.voidhttp.request.session.Session;
+import net.voidhttp.util.console.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -205,7 +206,7 @@ public class HttpRequest implements Request {
             byte[] bytes = new byte[length];
             int read = stream.read(bytes, 0, length);
             if (read != length)
-                throw new RuntimeException("Invalid request body length");
+                Logger.warn("Invalid content length, read: " + read + ", expected: " + length);
 
             body = new String(bytes, StandardCharsets.UTF_8);
         }
