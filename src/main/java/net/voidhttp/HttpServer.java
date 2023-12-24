@@ -1,5 +1,6 @@
 package net.voidhttp;
 
+import lombok.Setter;
 import net.voidhttp.config.Flag;
 import net.voidhttp.controller.ControllerInjector;
 import net.voidhttp.request.HttpRequest;
@@ -42,6 +43,12 @@ public class HttpServer {
      * The server configuration flags.
      */
     private int flags;
+
+    /**
+     * The size of each chunk of data that is read from the socket.
+     */
+    @Setter
+    private int chunkSize = 131072;
 
     /**
      * Register a handler for the given request method.
@@ -171,7 +178,7 @@ public class HttpServer {
         ExecutorService executor = Threading.createWithId("request-thread-$code");
         executor.execute(() -> {
             // create the request and the response
-            HttpRequest request = new HttpRequest(socket);
+            HttpRequest request = new HttpRequest(socket, chunkSize);
             HttpResponse response = new HttpResponse(this, socket);
 
             // create the execution context wrapper

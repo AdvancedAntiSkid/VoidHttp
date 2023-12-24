@@ -49,6 +49,11 @@ public class HttpRequest implements Request {
     private final InetAddress host;
 
     /**
+     * The size of each chunk of data that is read from the socket.
+     */
+    private final int chunkSize;
+
+    /**
      * The query of the request url.
      */
     private Query query;
@@ -119,10 +124,11 @@ public class HttpRequest implements Request {
      * Initialize the http request.
      * @param socket connecting socket
      */
-    public HttpRequest(Socket socket) {
+    public HttpRequest(Socket socket, int chunkSize) {
         this.socket = socket;
         host = socket.getInetAddress();
         query = new RequestQuery(new HashMap<>());
+        this.chunkSize = chunkSize;
     }
 
     /**
@@ -203,12 +209,25 @@ public class HttpRequest implements Request {
         if (contentLength != null) {
             int length = Integer.parseInt(contentLength);
 
-            byte[] bytes = new byte[length];
-            int read = stream.read(bytes, 0, length);
-            if (read != length)
-                Logger.warn("Invalid content length, read: " + read + ", expected: " + length);
+            byte[] buffer = new byte[chunkSize];
+            ByteArrayOutputStream data = new ByteArrayOutputStream();
 
-            body = new String(bytes, StandardCharsets.UTF_8);
+            int bytesRead;
+            int totalBytesRead = 0;
+
+            while (
+                totalBytesRead < length &&
+                (bytesRead = stream.read(buffer, 0, Math.min(chunkSize, length - totalBytesRead))) != -1
+            ) {
+                data.write(buffer, 0, bytesRead);
+                totalBytesRead += bytesRead;
+            }
+
+            binary = data.toByteArray();
+            body = data.toString(StandardCharsets.UTF_8);
+
+            if (totalBytesRead != length)
+                Logger.warn("Invalid content length, read: " + totalBytesRead + ", expected: " + length);
         }
 
         // get the type of the requested content
