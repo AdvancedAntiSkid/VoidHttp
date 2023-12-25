@@ -286,5 +286,6 @@ public class HttpServer {
      */
     public void shutdown() {
         running = false;
+        threadPool.shutdown();
     }
 }
