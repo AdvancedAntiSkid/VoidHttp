@@ -55,7 +55,7 @@ public class MyController {
 
 ```java
 import net.voidhttp.controller.dto.Dto;
-import net.voidhttp.controller.handler.Pass;
+import net.voidhttp.controller.handler.Data;
 import net.voidhttp.controller.route.Controller;
 
 @Dto
@@ -73,7 +73,7 @@ public class LoginResponse {
 @Controller("user")
 public class MyController {
     @Get("login")
-    public LoginResponse onLogin(@Pass LoginRequest request) {
+    public LoginResponse onLogin(@Data LoginRequest request) {
         System.out.println(request.username + " has logged in!");
         LoginResponse response = new LoginResponse();
         response.success = true;
