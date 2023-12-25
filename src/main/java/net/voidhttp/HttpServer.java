@@ -19,6 +19,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Represents an advanced multithreaded HTTP server.
@@ -49,6 +50,17 @@ public class HttpServer {
      */
     @Setter
     private int chunkSize = 131072;
+
+    /**
+     * The number of threads in the thread pool.
+     */
+    @Setter
+    private int poolSize = Runtime.getRuntime().availableProcessors();
+
+    /**
+     * The thread pool used to handle socket connections.
+     */
+    private ExecutorService threadPool;
 
     /**
      * Register a handler for the given request method.
@@ -149,6 +161,9 @@ public class HttpServer {
         if (running)
             throw new IllegalStateException("Server is already running");
 
+        // create the thread pool for the specified size
+        threadPool = Executors.newFixedThreadPool(poolSize);
+
         // create a new server socket
         try (ServerSocket server = new ServerSocket(port)) {
             running = true;
@@ -174,9 +189,8 @@ public class HttpServer {
      * @param socket connecting client
      */
     private void acceptConnection(Socket socket) {
-        // create a new thread for handling the request
-        ExecutorService executor = Threading.createWithId("request-thread-$code");
-        executor.execute(() -> {
+        // submit the request handler task to the thread pool
+        threadPool.submit(() -> {
             // create the request and the response
             HttpRequest request = new HttpRequest(socket, chunkSize);
             HttpResponse response = new HttpResponse(this, socket);
