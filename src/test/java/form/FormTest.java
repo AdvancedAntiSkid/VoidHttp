@@ -1,3 +1,5 @@
+package form;
+
 import net.voidhttp.HttpServer;
 import net.voidhttp.request.form.FormEntry;
 

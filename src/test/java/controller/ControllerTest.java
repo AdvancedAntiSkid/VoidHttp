@@ -1,3 +1,5 @@
+package controller;
+
 import dev.inventex.octa.concurrent.future.Future;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

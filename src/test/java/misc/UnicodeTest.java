@@ -1,3 +1,5 @@
+package misc;
+
 import lombok.SneakyThrows;
 import net.voidhttp.HttpServer;
 import net.voidhttp.header.Headers;

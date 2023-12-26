@@ -1,3 +1,5 @@
+package controller;
+
 import com.google.gson.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

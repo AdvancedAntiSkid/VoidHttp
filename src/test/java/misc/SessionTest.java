@@ -1,3 +1,5 @@
+package misc;
+
 import net.voidhttp.request.session.RequestSession;
 import net.voidhttp.request.session.Session;
 
