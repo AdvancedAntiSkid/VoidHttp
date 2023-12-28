@@ -1,7 +1,6 @@
 package net.voidhttp.router;
 
 import net.voidhttp.HttpServer;
-import net.voidhttp.config.Flag;
 import net.voidhttp.request.HttpRequest;
 import net.voidhttp.request.Method;
 import net.voidhttp.response.HttpResponse;
@@ -172,7 +171,7 @@ public class Router {
         if (!handled) {
             try {
                 // check if no stack trace should be sent
-                if (server.getConfig().hasFlag(Flag.NO_STACK_TRACE)) {
+                if (!server.getConfig().isSendStackTrace()) {
                     response.status(400).send("");
                     return;
                 }

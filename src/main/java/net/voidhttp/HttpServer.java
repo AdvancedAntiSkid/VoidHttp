@@ -1,9 +1,7 @@
 package net.voidhttp;
 
 import lombok.Getter;
-import lombok.Setter;
 import lombok.SneakyThrows;
-import net.voidhttp.config.Flag;
 import net.voidhttp.controller.ControllerInjector;
 import net.voidhttp.request.HttpRequest;
 import net.voidhttp.request.query.RequestQuery;
@@ -13,19 +11,12 @@ import net.voidhttp.router.Middleware;
 import net.voidhttp.request.Method;
 import net.voidhttp.router.Route;
 import net.voidhttp.router.Router;
-import net.voidhttp.util.console.Logger;
-import net.voidhttp.util.threading.Threading;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * Represents an advanced multithreaded HTTP server.

@@ -1,13 +1,12 @@
 package server;
 
 import net.voidhttp.HttpServer;
-import net.voidhttp.config.Flag;
 import net.voidhttp.util.console.Logger;
 
 public class ServerTest {
     public static void main(String[] args) throws Exception {
         HttpServer server = new HttpServer();
-        server.getConfig().enableFlags(Flag.NO_STACK_TRACE);
+        server.getConfig().setSendStackTrace(false);
 
         server.get("/", (req, res) -> {
             System.out.println("Received request");

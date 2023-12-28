@@ -1,7 +1,6 @@
 package net.voidhttp.router;
 
 import lombok.Getter;
-import net.voidhttp.config.Flag;
 import net.voidhttp.request.Request;
 import net.voidhttp.request.query.RequestQuery;
 import net.voidhttp.response.HttpResponse;
@@ -94,7 +93,7 @@ public class Route {
             catch (Exception e) {
                 try {
                     // check if no stack trace should be sent
-                    if (((HttpResponse) response).getServer().getConfig().hasFlag(Flag.NO_STACK_TRACE)) {
+                    if (!((HttpResponse) response).getServer().getConfig().isSendStackTrace()) {
                         response.status(400).send("");
                         return;
                     }

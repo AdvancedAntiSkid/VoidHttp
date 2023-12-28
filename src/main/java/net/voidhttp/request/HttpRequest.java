@@ -128,9 +128,6 @@ public class HttpRequest implements Request {
      */
     private boolean passed;
 
-    private final int HEADER_READ_SIZE = 4096;
-    private final int MAX_HEADER_SIZE = 8192;
-
     private boolean headerStarted;
     private boolean contentStarted;
 
@@ -177,7 +174,7 @@ public class HttpRequest implements Request {
 
     private Future<Void> handleHeaderStart() {
         System.err.println("START HEADERS");
-        return readChannel(HEADER_READ_SIZE).tryThen(buffer -> {
+        return readChannel(config.getHeaderReadSize()).tryThen(buffer -> {
             String descriptor = buffer.readLine();
             if (descriptor == null)
                 return;
@@ -246,12 +243,12 @@ public class HttpRequest implements Request {
     private Future<Void> handleHeaderContinue() {
         System.err.println("CONTINUE HEADERS");
         // before reading the next header chunk, check if the header size has not exceeded the maximum size
-        if (totalHeaderSize > MAX_HEADER_SIZE)
+        if (totalHeaderSize > config.getMaxHeaderSize())
             return Future.failed(new RuntimeException(
-                "Header size " + totalHeaderSize + " exceeded maximum size of " + MAX_HEADER_SIZE + " bytes"
+                "Header size " + totalHeaderSize + " exceeded maximum size of " + config.getMaxHeaderSize() + " bytes"
             ));
 
-        return readChannel(HEADER_READ_SIZE).tryThen(buffer -> {
+        return readChannel(config.getHeaderReadSize()).tryThen(buffer -> {
             // check if a header was started in the previous chunk read
             if (incompleteHeader) {
                 Tuple<String, Boolean> remainingLine = buffer.readHeaderLine();
@@ -312,7 +309,7 @@ public class HttpRequest implements Request {
     }
 
     private Future<Void> handleHeaderParse() {
-        System.err.println("START CONTENT");
+        System.err.println("PARSE HEADERS");
 
         // header processing has been finished, parse the headers
         headers = HttpHeaders.parse(headerLines);
@@ -331,7 +328,9 @@ public class HttpRequest implements Request {
     }
 
     private Future<Void> handleContentStart() {
+        System.err.println("START CONTENT");
 
+        return Future.completed();
     }
 
     /**
@@ -413,7 +412,7 @@ public class HttpRequest implements Request {
             int contentStart = stream.position();
             int firstContentBytes = firstBytesRead - contentStart;
 
-            byte[] buffer = new byte[config.getChunkSize()];
+            byte[] buffer = new byte[config.getContentReadSize()];
             int bytesRead = stream.read(buffer, 0, firstContentBytes);
             data.write(buffer, 0, bytesRead);
 

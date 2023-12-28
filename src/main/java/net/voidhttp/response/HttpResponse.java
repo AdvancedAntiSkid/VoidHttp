@@ -5,7 +5,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import lombok.Getter;
 import net.voidhttp.HttpServer;
-import net.voidhttp.config.Flag;
 import net.voidhttp.controller.dto.Dto;
 import net.voidhttp.header.Headers;
 import net.voidhttp.header.HttpHeaders;
@@ -17,7 +16,6 @@ import net.voidhttp.util.Placeholder;
 import net.voidhttp.util.json.JsonBuilder;
 
 import java.io.*;
-import java.net.Socket;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -86,6 +84,7 @@ public class HttpResponse implements Response {
      */
     @Override
     public void send(byte[] bytes, MIMEType type) throws IOException {
+        // TODO implement buffered response writer
         if (2 == 2)
             return;
 
@@ -95,7 +94,7 @@ public class HttpResponse implements Response {
         // write the response status
         writer.println("HTTP/1.1 " + code + " " + message);
         // write the default header values if they are missing
-        if (!server.getConfig().hasFlag(Flag.NO_SERVER_NAME))
+        if (server.getConfig().isServerNameDisplay())
             headers.addIfAbsent("Server", "VoidHttp 1.0");
         headers.addIfAbsent("Date", currentDateTime());
         headers.addIfAbsent("Content-type", type);
