@@ -18,6 +18,7 @@ import net.voidhttp.util.json.JsonBuilder;
 
 import java.io.*;
 import java.net.Socket;
+import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
@@ -41,9 +42,9 @@ public class HttpResponse implements Response {
     private final HttpServer server;
 
     /**
-     * The requesting client socket.
+     * The requesting client socket channel.
      */
-    private final Socket socket;
+    private final AsynchronousSocketChannel channel;
 
     /**
      * The registry of the response headers.
@@ -67,11 +68,13 @@ public class HttpResponse implements Response {
 
     /**
      * Initialize the HTTP response.
-     * @param socket client socket
+     * @param server the server that handles the http response
+     * @param channel the requesting client socket channel
      */
-    public HttpResponse(HttpServer server, Socket socket) {
+    public HttpResponse(HttpServer server, AsynchronousSocketChannel channel) {
         this.server = server;
-        this.socket = socket;
+        this.channel = channel;
+
         headers = HttpHeaders.empty();
         cookies = new ResponseCookies();
     }
@@ -83,13 +86,16 @@ public class HttpResponse implements Response {
      */
     @Override
     public void send(byte[] bytes, MIMEType type) throws IOException {
+        if (2 == 2)
+            return;
+
         // create data output writer
-        OutputStream stream = socket.getOutputStream();
+        OutputStream stream = null; //  socket.getOutputStream();
         PrintWriter writer = new PrintWriter(stream);
         // write the response status
         writer.println("HTTP/1.1 " + code + " " + message);
         // write the default header values if they are missing
-        if (!server.hasFlag(Flag.NO_SERVER_NAME))
+        if (!server.getConfig().hasFlag(Flag.NO_SERVER_NAME))
             headers.addIfAbsent("Server", "VoidHttp 1.0");
         headers.addIfAbsent("Date", currentDateTime());
         headers.addIfAbsent("Content-type", type);

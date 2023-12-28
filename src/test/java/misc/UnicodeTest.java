@@ -24,7 +24,7 @@ public class UnicodeTest {
             res.send("hello world");
         });
 
-        server.listenAsync(80);
+        server.listen(80);
 
         postJson("test", "áéíóú");
     }

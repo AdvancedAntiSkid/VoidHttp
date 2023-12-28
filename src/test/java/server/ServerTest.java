@@ -1,3 +1,5 @@
+package server;
+
 import net.voidhttp.HttpServer;
 import net.voidhttp.config.Flag;
 import net.voidhttp.util.console.Logger;
@@ -5,9 +7,10 @@ import net.voidhttp.util.console.Logger;
 public class ServerTest {
     public static void main(String[] args) throws Exception {
         HttpServer server = new HttpServer();
-        server.enableFlags(Flag.NO_STACK_TRACE);
+        server.getConfig().enableFlags(Flag.NO_STACK_TRACE);
 
         server.get("/", (req, res) -> {
+            System.out.println("Received request");
             res.send("Hello, World!");
         });
 
@@ -22,5 +25,7 @@ public class ServerTest {
         server.listen(80, () -> {
             Logger.success("Webserver has been started");
         });
+
+        System.in.read();
     }
 }

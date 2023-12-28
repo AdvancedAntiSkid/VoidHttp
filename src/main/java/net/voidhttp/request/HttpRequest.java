@@ -2,9 +2,12 @@ package net.voidhttp.request;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import dev.inventex.octa.concurrent.future.Future;
+import dev.inventex.octa.data.primitive.Tuple;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
+import net.voidhttp.ServerConfig;
 import net.voidhttp.header.Headers;
 import net.voidhttp.header.HttpHeaders;
 import net.voidhttp.request.cookie.Cookies;
@@ -20,28 +23,33 @@ import net.voidhttp.request.parameter.RequestParameters;
 import net.voidhttp.request.query.Query;
 import net.voidhttp.request.query.RequestQuery;
 import net.voidhttp.request.session.Session;
-import net.voidhttp.util.console.Logger;
+import net.voidhttp.response.PushbackBuffer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.net.InetAddress;
-import java.net.Socket;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.CompletionHandler;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Represents a client http request.
  */
 public class HttpRequest implements Request {
     /**
-     * The connecting client socket.
+     * The connecting client socket channel.
      */
     @Getter
-    private final Socket socket;
+    private final AsynchronousSocketChannel channel;
 
     /**
      * The requesting client's address.
@@ -49,9 +57,9 @@ public class HttpRequest implements Request {
     private final InetAddress host;
 
     /**
-     * The size of each chunk of data that is read from the socket.
+     * The configuration of the http server.
      */
-    private final int chunkSize;
+    private final ServerConfig config;
 
     /**
      * The query of the request url.
@@ -120,27 +128,218 @@ public class HttpRequest implements Request {
      */
     private boolean passed;
 
+    private final int HEADER_READ_SIZE = 4096;
+    private final int MAX_HEADER_SIZE = 8192;
+
+    private boolean headerStarted;
+    private boolean contentStarted;
+
+    private final List<String> headerLines = new ArrayList<>();
+    private String lastHeaderLinePart;
+    private boolean incompleteHeader;
+
+    private int totalHeaderSize;
+
+    private final ByteArrayOutputStream contentBuffer = new ByteArrayOutputStream();
+
     /**
      * Initialize the http request.
-     * @param socket connecting socket
+     * @param channel the connecting client socket channel
+     * @param config the configuration of the server
      */
-    public HttpRequest(Socket socket, int chunkSize) {
-        this.socket = socket;
-        host = socket.getInetAddress();
+    @SneakyThrows
+    public HttpRequest(AsynchronousSocketChannel channel, ServerConfig config) {
+        this.channel = channel;
+        this.config = config;
+
+        SocketAddress remoteAddress = channel.getRemoteAddress();
+        if (remoteAddress instanceof InetSocketAddress inet)
+            host = inet.getAddress();
+        else
+            throw new IOException("Unrecognized socket address: " + remoteAddress);
+
         query = new RequestQuery(new HashMap<>());
-        this.chunkSize = chunkSize;
+    }
+
+    public Future<Void> parse() {
+        return nextChunk(ReadState.START_HEADERS);
+    }
+
+    private Future<Void> nextChunk(ReadState nextState) {
+        return switch (nextState) {
+            case START_HEADERS -> handleHeaderStart();
+            case CONTINUE_HEADERS -> handleHeaderContinue();
+            case PARSE_HEADERS -> handleHeaderParse();
+            case START_CONTENT -> handleContentStart();
+            default -> Future.failed(new RuntimeException("Unhandled end of handler chain: " + nextState));
+        };
+    }
+
+    private Future<Void> handleHeaderStart() {
+        System.err.println("START HEADERS");
+        return readChannel(HEADER_READ_SIZE).tryThen(buffer -> {
+            String descriptor = buffer.readLine();
+            if (descriptor == null)
+                return;
+
+            StringTokenizer tokenizer = new StringTokenizer(descriptor);
+
+            // determine the request method
+            String methodToken = tokenizer.nextToken().toUpperCase();
+            method = Method.of(methodToken);
+            if (method == null)
+                throw new RuntimeException("Invalid request method: " + methodToken);
+
+            System.err.println("METHOD: " + methodToken);
+
+            // get the requested url
+            // the route and parameters are separated using a question mark
+            String[] url = tokenizer.nextToken().split("\\?");
+            route = url[0];
+            // parse the url parameters
+            parameters = url.length > 1
+                ? RequestParameters.parse(url[1])
+                : RequestParameters.empty();
+
+            // read the headers of the request
+            Tuple<String, Boolean> line;
+            while ((line = buffer.readHeaderLine()) != null) {
+                String header = line.getFirst();
+                boolean newLine = line.getSecond();
+                lastHeaderLinePart = header;
+
+                // check if the header size exceeded the initial 4kb buffer
+                // this means a header is incomplete, and we have to read the next chunk
+                if (!newLine) {
+                    incompleteHeader = true;
+                    nextChunk(ReadState.CONTINUE_HEADERS);
+                    return;
+                }
+
+                // the headers and the request body is separated using an empty line
+                // stop processing headers if the line is empty
+                if (header.isEmpty()) {
+                    // append the read amount of bytes to the total header size
+                    totalHeaderSize += buffer.position();
+
+                    // read all remaining bytes from the buffer
+                    contentBuffer.write(buffer.readAllBytes());
+
+                    nextChunk(ReadState.START_CONTENT);
+                    return;
+                }
+
+                // append the header line
+                headerLines.add(header);
+            }
+
+            // headers are not finished yet, append the whole size of the current buffer
+            totalHeaderSize += buffer.size();
+
+            // end of buffer reached, but the header is not complete
+            // this means we have to read the next chunk
+            // no header line is incomplete, so we don't have to append the last header line part
+            nextChunk(ReadState.CONTINUE_HEADERS);
+        }).callback();
+    }
+
+    private Future<Void> handleHeaderContinue() {
+        System.err.println("CONTINUE HEADERS");
+        // before reading the next header chunk, check if the header size has not exceeded the maximum size
+        if (totalHeaderSize > MAX_HEADER_SIZE)
+            return Future.failed(new RuntimeException(
+                "Header size " + totalHeaderSize + " exceeded maximum size of " + MAX_HEADER_SIZE + " bytes"
+            ));
+
+        return readChannel(HEADER_READ_SIZE).tryThen(buffer -> {
+            // check if a header was started in the previous chunk read
+            if (incompleteHeader) {
+                Tuple<String, Boolean> remainingLine = buffer.readHeaderLine();
+                // legitimately, this should never happen
+                if (remainingLine == null)
+                    throw new RuntimeException("Unable to read remaining header line from");
+
+                // legitimately, the header should not fill the entire chunk
+                boolean newLine = remainingLine.getSecond();
+                if (!newLine)
+                    throw new RuntimeException("Header line exceeded chunk size");
+
+                // register the remaining header line
+                headerLines.add(lastHeaderLinePart + remainingLine.getFirst());
+                incompleteHeader = false;
+            }
+
+            // read the headers of the request
+            Tuple<String, Boolean> line;
+            while ((line = buffer.readHeaderLine()) != null) {
+                String header = line.getFirst();
+                boolean newLine = line.getSecond();
+                lastHeaderLinePart = header;
+
+                // check if the header size exceeded the initial 4kb buffer
+                // this means a header is incomplete, and we have to read the next chunk
+                if (!newLine) {
+                    incompleteHeader = true;
+                    nextChunk(ReadState.CONTINUE_HEADERS);
+                    return;
+                }
+
+                // the headers and the request body is separated using an empty line
+                // stop processing headers if the line is empty
+                if (header.isEmpty()) {
+                    // append the read amount of bytes to the total header size
+                    totalHeaderSize += buffer.position();
+
+                    // read all remaining bytes from the buffer
+                    contentBuffer.write(buffer.readAllBytes());
+
+                    nextChunk(ReadState.START_CONTENT);
+                    return;
+                }
+
+                // append the header line
+                headerLines.add(header);
+            }
+
+            // headers are not finished yet, append the whole size of the current buffer
+            totalHeaderSize += buffer.size();
+
+            // end of buffer reached, but the header is not complete
+            // this means we have to read the next chunk
+            // no header line is incomplete, so we don't have to append the last header line part
+            nextChunk(ReadState.CONTINUE_HEADERS);
+        }).callback();
+    }
+
+    private Future<Void> handleHeaderParse() {
+        System.err.println("START CONTENT");
+
+        // header processing has been finished, parse the headers
+        headers = HttpHeaders.parse(headerLines);
+
+        // parse the request cookies
+        // check if there is a header with the key "cookie"
+        String header = headers.get("cookie");
+        cookies = header != null
+            ? RequestCookies.parse(header)
+            : RequestCookies.empty();
+
+        // create request transfer data holder
+        data = new RequestData();
+
+        return Future.completed();
+    }
+
+    private Future<Void> handleContentStart() {
+
     }
 
     /**
      * Handle the http request.
      */
-    public void open() throws Exception {
-        // read characters from the client via input stream on the socket
-        InputStream in = socket.getInputStream();
-        PushbackInputStream stream = new PushbackInputStream(in);
-
+    private void open(PushbackBuffer stream, int firstBytesRead) throws Exception {
         // create a tokenizer for parsing input
-        String descriptor = readNextLine(stream);
+        String descriptor = stream.readLine();
         if (descriptor == null)
             return;
 
@@ -164,7 +363,7 @@ public class HttpRequest implements Request {
         // read the headers of the request
         List<String> lines = new ArrayList<>();
         String line;
-        while ((line = readNextLine(stream)) != null) {
+        while ((line = stream.readLine()) != null) {
             // the headers and the request body is separated using an empty line
             // stop processing headers if the line is empty
             if (line.isEmpty())
@@ -207,17 +406,32 @@ public class HttpRequest implements Request {
         // read the body of the request as binary
         String contentLength = headers.get("Content-Length");
         if (contentLength != null) {
-            int length = Integer.parseInt(contentLength);
+            int totalContentBytes = Integer.parseInt(contentLength);
 
-            byte[] buffer = new byte[chunkSize];
-            ByteArrayOutputStream data = new ByteArrayOutputStream();
+            ByteArrayOutputStream data = new ByteArrayOutputStream(totalContentBytes);
+
+            int contentStart = stream.position();
+            int firstContentBytes = firstBytesRead - contentStart;
+
+            byte[] buffer = new byte[config.getChunkSize()];
+            int bytesRead = stream.read(buffer, 0, firstContentBytes);
+            data.write(buffer, 0, bytesRead);
+
+            System.err.println("CONTENT: " + data.toString(StandardCharsets.UTF_8));
+
+/*
+
+
+
+            byte[] buffer = new byte[config.getChunkSize()];
+            ByteArrayOutputStream data = new ByteArrayOutputStream(totalContentBytes);
 
             int bytesRead;
             int totalBytesRead = 0;
 
             while (
-                totalBytesRead < length &&
-                (bytesRead = stream.read(buffer, 0, Math.min(chunkSize, length - totalBytesRead))) != -1
+                totalBytesRead < totalContentBytes &&
+                (bytesRead = stream.read(buffer, 0, Math.min(config.getChunkSize(), totalContentBytes - totalBytesRead))) != -1
             ) {
                 data.write(buffer, 0, bytesRead);
                 totalBytesRead += bytesRead;
@@ -226,8 +440,10 @@ public class HttpRequest implements Request {
             binary = data.toByteArray();
             body = data.toString(StandardCharsets.UTF_8);
 
-            if (totalBytesRead != length)
-                Logger.warn("Invalid content length, read: " + totalBytesRead + ", expected: " + length);
+            if (totalBytesRead != totalContentBytes)
+                Logger.warn("Invalid content totalContentBytes, read: " + totalBytesRead + ", expected: " + totalContentBytes);
+
+ */
         }
 
         // get the type of the requested content
@@ -246,7 +462,7 @@ public class HttpRequest implements Request {
      * @param boundary boundary of the multipart/form-data body
      */
     @SneakyThrows
-    private void parseMultipartData(InputStream stream, String boundary) {
+    private void parseMultipartData(PushbackBuffer stream, String boundary) {
         boolean started = false;
 
         List<String> lines = new ArrayList<>();
@@ -254,7 +470,7 @@ public class HttpRequest implements Request {
 
         // read all the available lines from the connecting socket
         String line;
-        while ((line = readNextLine(stream)) != null) {
+        while ((line = stream.readLine()) != null) {
             // check if a new form entry has started
             if (line.equals("--" + boundary)) {
                 // indicate, that the first form entry has started
@@ -282,43 +498,38 @@ public class HttpRequest implements Request {
         multipart = new RequestMultipartForm(entries);
     }
 
-    /**
-     * Read the next line from a binary input stream.
-     * @param stream reader of the request body
-     * @return the next line
-     * @throws IOException error whilst reading
-     */
-    private String readNextLine(InputStream stream) throws IOException {
-        StringBuilder builder = new StringBuilder();
-        int read;
-        boolean newLine = false;
+    private Future<PushbackBuffer> readChannel(int bufferSize) {
+        Future<PushbackBuffer> future = new Future<>();
 
-        while ((read = stream.read()) != -1) {
-            char c = (char) read;
+        ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
+        Tuple<Long, TimeUnit> readTimeout = config.getReadTimeout();
 
-            if (c == '\n') {
-                newLine = true;
-                break;
-            } else if (c == '\r') {
-                // check for \r and handle it if encountered
-                newLine = true;
-                int nextChar = stream.read(); // read the next character after \r
-
-                if (nextChar != -1 && (char) nextChar != '\n') {
-                    // if it's not \n, put it back to the stream
-                    ((PushbackInputStream) stream).unread(nextChar);
+        CompletionHandler<Integer, Void> handler = new CompletionHandler<>() {
+            @Override
+            public void completed(Integer bytesRead, Void attachment) {
+                if (bytesRead == -1) {
+                    System.out.println("Connection closed");
+                    return;
                 }
-                break;
+
+                byte[] data = new byte[bytesRead];
+                buffer.flip();
+                buffer.get(data);
+
+                ByteArrayInputStream stream = new ByteArrayInputStream(data);
+
+                future.complete(new PushbackBuffer(stream));
             }
 
-            builder.append(c);
-        }
+            @Override
+            public void failed(Throwable error, Void attachment) {
+                System.out.println("Failed to read from channel: " + error.getMessage());
+                future.fail(error);
+            }
+        };
 
-        // return null if there's no more data to read
-        if (!newLine && builder.isEmpty())
-            return null;
-
-        return builder.toString();
+        channel.read(buffer, readTimeout.getFirst(), readTimeout.getSecond(), null, handler);
+        return future;
     }
 
     /**

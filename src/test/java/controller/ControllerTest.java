@@ -34,7 +34,7 @@ public class ControllerTest {
         ControllerInjector injector = new ControllerInjector();
         injector.inject(server, new TestController());
 
-        server.listenAsync(80, () -> System.out.println("Listening on port 80"));
+        server.listen(80, () -> System.out.println("Listening on port 80"));
 
         String endpoint = "auth/login?x=100";
         String data = "{\"username\":\"admin\",\"password\":\"S3curePa$$w0rd\"}";

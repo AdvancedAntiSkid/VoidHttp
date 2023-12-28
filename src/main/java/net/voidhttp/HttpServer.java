@@ -1,6 +1,8 @@
 package net.voidhttp;
 
+import lombok.Getter;
 import lombok.Setter;
+import lombok.SneakyThrows;
 import net.voidhttp.config.Flag;
 import net.voidhttp.controller.ControllerInjector;
 import net.voidhttp.request.HttpRequest;
@@ -15,8 +17,12 @@ import net.voidhttp.util.console.Logger;
 import net.voidhttp.util.threading.Threading;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.channels.AsynchronousServerSocketChannel;
+import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.CompletionHandler;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -31,36 +37,20 @@ public class HttpServer {
     private final Router router = new Router(this);
 
     /**
-     * The route controller injector of the server.
+     * The dynamic route controller injector of the server.
      */
     private final ControllerInjector injector = new ControllerInjector();
 
     /**
-     * Determine if the server is running.
+     * The asynchronous server socket channel of the server.
      */
-    private volatile boolean running;
+    private AsynchronousServerSocketChannel server;
 
     /**
-     * The server configuration flags.
+     * The configuration of the http server.
      */
-    private int flags;
-
-    /**
-     * The size of each chunk of data that is read from the socket.
-     */
-    @Setter
-    private int chunkSize = 131072;
-
-    /**
-     * The number of threads in the thread pool.
-     */
-    @Setter
-    private int poolSize = Runtime.getRuntime().availableProcessors();
-
-    /**
-     * The thread pool used to handle socket connections.
-     */
-    private ExecutorService threadPool;
+    @Getter
+    private ServerConfig config = new ServerConfig();
 
     /**
      * Register a handler for the given request method.
@@ -113,6 +103,16 @@ public class HttpServer {
     }
 
     /**
+     * Update the configuration of the http server.
+     * @param config the new configuration
+     * @return the server instance
+     */
+    public HttpServer config(ServerConfig config) {
+        this.config = config;
+        return this;
+    }
+
+    /**
      * Inject an HTTP route controller into the server.
      * @param controller controller to inject
      * @param <T> type of the controller
@@ -123,111 +123,94 @@ public class HttpServer {
     }
 
     /**
-     * Enable server configuration flags.
-     * @param flags config flags to enable
-     */
-    public HttpServer enableFlags(Flag... flags) {
-        for (Flag flag : flags)
-            this.flags |= flag.getId();
-        return this;
-    }
-
-    /**
-     * Disable server configuration flags.
-     * @param flags config flags to disable
-     */
-    public HttpServer disableFlags(Flag... flags) {
-        for (Flag flag : flags)
-            this.flags &= ~flag.getId();
-        return this;
-    }
-
-    /**
-     * Determine if the server has a configuration flag enabled.
-     * @param flag flag to check
-     * @return true if the flag is enabled
-     */
-    public boolean hasFlag(Flag flag) {
-        return (flags & flag.getId()) > 0;
-    }
-
-    /**
      * Start the HTTP server and begin listening for requests.
      * @param port server port
      * @param actions server startup handlers
      */
+    @SneakyThrows
     public void listen(int port, Runnable... actions) {
         // check if the server is already running
-        if (running)
+        if (isRunning())
             throw new IllegalStateException("Server is already running");
 
-        // create the thread pool for the specified size
-        threadPool = Executors.newFixedThreadPool(poolSize);
+        // create the server socket channel and bind it to the specified port
+        server = AsynchronousServerSocketChannel.open();
+        server.bind(new InetSocketAddress("127.0.0.1", port));
 
-        // create a new server socket
-        try (ServerSocket server = new ServerSocket(port)) {
-            running = true;
-            // notify startup actions
-            for (Runnable action : actions)
-                action.run();
+        // accept incoming socket connections
+        acceptSockets();
 
-            // start listening for requests
-            while (running) {
-                // accept the next client connection
-                // block whilst a new client connects
-                acceptConnection(server.accept());
+        // notify startup actions
+        for (Runnable action : actions)
+            action.run();
+    }
+
+    /**
+     * Accept incoming client socket connections recursively.
+     */
+    private void acceptSockets() {
+        // accept the first connection
+        server.accept(null, new CompletionHandler<AsynchronousSocketChannel, Void>() {
+            /**
+             * Invoked when an operation has completed.
+             *
+             * @param channel the result of the I/O operation
+             * @param attachment the object attached to the I/O operation when it was initiated
+             */
+            @Override
+            public void completed(AsynchronousSocketChannel channel, Void attachment) {
+                // accept the next connection recursively, if the server is still open
+                if (server.isOpen())
+                    server.accept(null, this);
+
+                acceptConnection(channel);
             }
-        } catch (IOException e) {
-            Logger.error("Error whilst trying to start webserver.");
-            e.printStackTrace();
-        }
-        System.out.println("[VoidHttp] Server shut down.");
+
+            /**
+             * Invoked when an operation fails.
+             *
+             * @param exc the exception to indicate why the I/O operation failed
+             * @param attachment the object attached to the I/O operation when it was initiated
+             */
+            @Override
+            public void failed(Throwable exc, Void attachment) {
+                System.err.println("[VoidHttp] Failed to accept connection: " + exc.getMessage());
+            }
+        });
     }
 
     /**
      * Accept the next client socket connection.
-     * @param socket connecting client
+     * @param channel connecting client socket channel
      */
-    private void acceptConnection(Socket socket) {
-        // submit the request handler task to the thread pool
-        threadPool.submit(() -> {
-            // create the request and the response
-            HttpRequest request = new HttpRequest(socket, chunkSize);
-            HttpResponse response = new HttpResponse(this, socket);
+    private void acceptConnection(AsynchronousSocketChannel channel) {
+        // create the request and the response
+        HttpRequest request = new HttpRequest(channel, config);
+        HttpResponse response = new HttpResponse(this, channel);
 
-            // create the execution context wrapper
-            Context context = new Context(request, response);
+        // create the execution context wrapper
+        Context context = new Context(request, response);
 
-            try {
-                // read the request from the incoming socket
-                request.open();
+        try {
+            // read the request from the incoming socket
+            request
+                .parse()
+                .tryThen(val -> {
+                    // update the request data
+                    context.setMethod(request.method());
+                    context.setUrl(request.route());
 
-                // update the request data
-                context.setMethod(request.method());
-                context.setUrl(request.route());
-
-                // let the router handle the request
-                handleRequest(context);
-            } catch (Exception e) {
-                // redirect the error to the router, let implementation handle it
-                router.handleError(context, e);
-            }
-        });
-    }
-
-    /**
-     * Asynchronously start the HTTP server and begin listening for requests.
-     * @param port server port
-     * @param actions server startup handlers
-     */
-    public void listenAsync(int port, Runnable... actions) {
-        ExecutorService executor = Threading.create("listener-thread");
-        executor.execute(() -> {
-            // start the webserver and block this thread until shutdown
-            listen(port, actions);
-            // server has stopped, terminate the executor
-            Threading.terminate(executor);
-        });
+                    // let the router handle the request
+                    handleRequest(context);
+                }).except(e -> {
+                    e.printStackTrace();
+                    // redirect the error to the router, let implementation handle it
+                    // router.handleError(context, e);
+                });
+        } catch (Exception e) {
+            // redirect the error to the router, let implementation handle it
+            router.handleError(context, e);
+        }
     }
 
     /**
@@ -264,12 +247,15 @@ public class HttpServer {
             RequestQuery query = new RequestQuery();
             if (!route.test(url, query))
                 continue;
+
             // handle the request
             request.setQuery(query);
             route.handle(request, response);
+
             // stop processing if the handler did not pass the handling
             if (!request.passed())
                 return;
+
             // mark the request as handled and reset the request state
             handled = true;
             request.reset();
@@ -282,10 +268,18 @@ public class HttpServer {
     }
 
     /**
+     * Indicate, whether the server is running or not.
+     * @return true if the server is running
+     */
+    public boolean isRunning() {
+        return server != null && server.isOpen();
+    }
+
+    /**
      * Stop the HTTP server and close connections.
      */
+    @SneakyThrows
     public void shutdown() {
-        running = false;
-        threadPool.shutdown();
+        server.close();
     }
 }

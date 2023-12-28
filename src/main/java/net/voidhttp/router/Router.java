@@ -116,8 +116,9 @@ public class Router {
         HttpRequest request = context.getRequest();
         HttpResponse response = context.getResponse();
         // do not handle request, if the socket is already closed
-        if (request.getSocket().isClosed())
+        if (!request.getChannel().isOpen())
             return;
+
         // get the code 404 handlers
         boolean handled = false;
         List<Route> errorRoutes = errorMap.get(404);
@@ -171,7 +172,7 @@ public class Router {
         if (!handled) {
             try {
                 // check if no stack trace should be sent
-                if (server.hasFlag(Flag.NO_STACK_TRACE)) {
+                if (server.getConfig().hasFlag(Flag.NO_STACK_TRACE)) {
                     response.status(400).send("");
                     return;
                 }

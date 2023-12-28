@@ -33,7 +33,7 @@ public class RawControllerTest {
 
         registerController(server, new TestController());
 
-        server.listenAsync(80, () -> System.out.println("Listening on port 80"));
+        server.listen(80, () -> System.out.println("Listening on port 80"));
 
         String response = postJson("auth/login?x=100", "{\"username\":\"admin\",\"password\":\"123\"}");
         System.out.println(response);
