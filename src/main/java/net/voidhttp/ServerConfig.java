@@ -44,6 +44,11 @@ public class ServerConfig {
     private int contentReadSize = 131072;
 
     /**
+     * The size in bytes, of each chunk of data that is written to the socket when sending the content.
+     */
+    private int contentWriteSize = 131072;
+
+    /**
      * The maximum size in bytes of the content. If the socket exceeds this limit, the connection is dropped.
      * <p>
      * Legitimate requests should not exceed this limit, as it is very high.

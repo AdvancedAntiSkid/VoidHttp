@@ -16,10 +16,12 @@ import net.voidhttp.util.Placeholder;
 import net.voidhttp.util.json.JsonBuilder;
 
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -84,12 +86,10 @@ public class HttpResponse implements Response {
      */
     @Override
     public void send(byte[] bytes, MIMEType type) throws IOException {
-        // TODO implement buffered response writer
-        if (2 == 2)
-            return;
+        System.err.println("Sending response " + new String(bytes));
 
         // create data output writer
-        OutputStream stream = null; //  socket.getOutputStream();
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
         PrintWriter writer = new PrintWriter(stream);
         // write the response status
         writer.println("HTTP/1.1 " + code + " " + message);
@@ -108,9 +108,25 @@ public class HttpResponse implements Response {
         writer.flush();
         // write the body of the response
         stream.write(bytes);
-        stream.flush();
+
+        byte[] data = stream.toByteArray();
+        System.err.println("sending: " + new String(data));
+
+        // write the response to the client using the specified size of chunks
+        int bytesToWrite = data.length;
+        int bytesWritten = 0;
+
+        while(bytesWritten < bytesToWrite) {
+            int bufferSize = Math.min(bytesToWrite - bytesWritten, server.getConfig().getContentWriteSize());
+            ByteBuffer buffer = ByteBuffer.wrap(data, bytesWritten, bufferSize);
+            // there is no need to wait for the write to finish, the write order is guaranteed by TCP
+            channel.write(buffer);
+            bytesWritten += bufferSize;
+        }
+
         // close the connection
-        stream.close();
+        channel.close();
+        // TODO implement keep-alive connections
     }
 
     /**

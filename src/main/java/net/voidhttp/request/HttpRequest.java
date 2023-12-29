@@ -382,6 +382,8 @@ public class HttpRequest implements Request {
                 json = (JsonObject) JsonParser.parseString(body);
             } catch (Exception ignored) {}
         }
+
+        completionHandler.complete(null);
     }
 
     /**
