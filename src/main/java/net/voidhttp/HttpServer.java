@@ -199,26 +199,20 @@ public class HttpServer {
         // create the execution context wrapper
         Context context = new Context(request, response);
 
-        try {
-            // read the request from the incoming socket
-            request
-                .parse()
-                .tryThen(val -> {
-                    // update the request data
-                    context.setMethod(request.method());
-                    context.setUrl(request.route());
+        // read the request from the incoming socket
+        request
+            .parse()
+            .tryThen(val -> {
+                // update the request data
+                context.setMethod(request.method());
+                context.setUrl(request.route());
 
-                    // let the router handle the request
-                    handleRequest(context);
-                }).except(e -> {
-                    e.printStackTrace();
-                    // redirect the error to the router, let implementation handle it
-                    // router.handleError(context, e);
-                });
-        } catch (Exception e) {
-            // redirect the error to the router, let implementation handle it
-            router.handleError(context, e);
-        }
+                // let the router handle the request
+                handleRequest(context);
+            }).except(e -> {
+                // redirect the error to the router, let implementation handle it
+                router.handleError(context, e);
+            });
     }
 
     /**
