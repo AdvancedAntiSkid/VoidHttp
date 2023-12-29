@@ -13,10 +13,12 @@ import net.voidhttp.router.Route;
 import net.voidhttp.router.Router;
 
 import java.net.InetSocketAddress;
+import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 /**
  * Represents an advanced multithreaded HTTP server.
@@ -125,7 +127,7 @@ public class HttpServer {
             throw new IllegalStateException("Server is already running");
 
         // create the server socket channel and bind it to the specified port
-        server = AsynchronousServerSocketChannel.open();
+        server = AsynchronousServerSocketChannel.open(createChannelGroup());
         server.bind(new InetSocketAddress("127.0.0.1", port));
 
         // accept incoming socket connections
@@ -134,6 +136,21 @@ public class HttpServer {
         // notify startup actions
         for (Runnable action : actions)
             action.run();
+    }
+
+    /**
+     * Create the asynchronous channel group for the server that will take care of
+     * balancing the incoming connections between the threads.
+     *
+     * @return the asynchronous channel group
+     */
+    @SneakyThrows
+    private AsynchronousChannelGroup createChannelGroup() {
+        return AsynchronousChannelGroup.withThreadPool(
+            config.isVirtualThreads() ?
+                Executors.newVirtualThreadPerTaskExecutor() :
+                Executors.newFixedThreadPool(config.getPoolSize())
+        );
     }
 
     /**
