@@ -19,6 +19,7 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.util.List;
 import java.util.concurrent.Executors;
+import java.util.function.BiConsumer;
 
 /**
  * Represents an advanced multithreaded HTTP server.
@@ -44,6 +45,11 @@ public class HttpServer {
      */
     @Getter
     private ServerConfig config = new ServerConfig();
+
+    /**
+     * The concurrent socket channel pool of the server.
+     */
+    private SocketChannelPool channelPool;
 
     /**
      * Register a handler for the given request method.
@@ -131,7 +137,12 @@ public class HttpServer {
         server.bind(new InetSocketAddress("127.0.0.1", port));
 
         // accept incoming socket connections
-        acceptSockets();
+        channelPool = new SocketChannelPool(
+            server,
+            config,
+            this::acceptConnection
+        );
+        channelPool.acceptSockets();
 
         // notify startup actions
         for (Runnable action : actions)
@@ -147,44 +158,12 @@ public class HttpServer {
     @SneakyThrows
     private AsynchronousChannelGroup createChannelGroup() {
         return AsynchronousChannelGroup.withThreadPool(
+            // in case of virtual threads, we should not pool them
+            // for more information, visit: https://docs.oracle.com/en/java/javase/20/core/virtual-threads.html#GUID-9065C2D5-9006-4F1A-93E0-D5153BB40475
             config.isVirtualThreads() ?
                 Executors.newVirtualThreadPerTaskExecutor() :
                 Executors.newFixedThreadPool(config.getPoolSize())
         );
-    }
-
-    /**
-     * Accept incoming client socket connections recursively.
-     */
-    private void acceptSockets() {
-        // accept the first connection
-        server.accept(null, new CompletionHandler<AsynchronousSocketChannel, Void>() {
-            /**
-             * Invoked when an operation has completed.
-             *
-             * @param channel the result of the I/O operation
-             * @param attachment the object attached to the I/O operation when it was initiated
-             */
-            @Override
-            public void completed(AsynchronousSocketChannel channel, Void attachment) {
-                // accept the next connection recursively, if the server is still open
-                if (server.isOpen())
-                    server.accept(null, this);
-
-                acceptConnection(channel);
-            }
-
-            /**
-             * Invoked when an operation fails.
-             *
-             * @param exc the exception to indicate why the I/O operation failed
-             * @param attachment the object attached to the I/O operation when it was initiated
-             */
-            @Override
-            public void failed(Throwable exc, Void attachment) {
-                System.err.println("[VoidHttp] Failed to accept connection: " + exc.getMessage());
-            }
-        });
     }
 
     /**
@@ -212,7 +191,8 @@ public class HttpServer {
             }).except(e -> {
                 // redirect the error to the router, let implementation handle it
                 router.handleError(context, e);
-            });
+            }).result((BiConsumer<Void, Throwable>) (val, err) -> channelPool.releaseChannel(channel));
+        // TODO release the channel after the write operation is done
     }
 
     /**

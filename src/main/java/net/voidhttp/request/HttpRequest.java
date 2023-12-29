@@ -24,6 +24,7 @@ import net.voidhttp.request.query.Query;
 import net.voidhttp.request.query.RequestQuery;
 import net.voidhttp.request.session.Session;
 import net.voidhttp.response.PushbackBuffer;
+import net.voidhttp.util.console.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -176,7 +177,6 @@ public class HttpRequest implements Request {
     }
 
     private void handleHeaderStart() {
-        System.err.println("START HEADERS");
         readChannel(config.getHeaderReadSize()).tryThen(buffer -> {
             String descriptor = buffer.readLine();
             if (descriptor == null)
@@ -189,8 +189,6 @@ public class HttpRequest implements Request {
             method = Method.of(methodToken);
             if (method == null)
                 throw new RuntimeException("Invalid request method: " + methodToken);
-
-            System.err.println("METHOD: " + methodToken);
 
             // get the requested url
             // the route and parameters are separated using a question mark
@@ -244,7 +242,6 @@ public class HttpRequest implements Request {
     }
 
     private void handleHeaderContinue() {
-        System.err.println("CONTINUE HEADERS");
         // before reading the next header chunk, check if the header size has not exceeded the maximum size
         if (totalHeaderSize > config.getMaxHeaderSize())
             throw new RuntimeException(
@@ -312,8 +309,6 @@ public class HttpRequest implements Request {
     }
 
     private void handleHeaderParse() {
-        System.err.println("PARSE HEADERS");
-
         // header processing has been finished, parse the headers
         headers = HttpHeaders.parse(headerLines);
 
@@ -334,8 +329,6 @@ public class HttpRequest implements Request {
     }
 
     private void handleSizedContentStart() {
-        System.err.println("START SIZED CONTENT");
-
         if (!headers.has("content-length"))
             throw new IllegalStateException(
                 "Header `content-length` must be specified for `" + headers.get("content-type") + "` request"
@@ -347,8 +340,6 @@ public class HttpRequest implements Request {
     }
 
     private void handleSizedContentContinue() {
-        System.err.println("CONTINUE SIZED CONTENT");
-
         int remainingBytes = contentLength - contentBuffer.size();
         int readSize = Math.min(config.getContentReadSize(), remainingBytes);
         readChannel(readSize).tryThen(buffer -> {
@@ -368,10 +359,6 @@ public class HttpRequest implements Request {
     }
 
     private void handleSizedContentParse() {
-        System.err.println("PARSE SIZED CONTENT");
-
-        System.out.println("CONTENT: " + contentBuffer.toString(StandardCharsets.UTF_8));
-
         binary = contentBuffer.toByteArray();
         body = contentBuffer.toString(StandardCharsets.UTF_8);
 
@@ -559,10 +546,8 @@ public class HttpRequest implements Request {
         CompletionHandler<Integer, Void> handler = new CompletionHandler<>() {
             @Override
             public void completed(Integer bytesRead, Void attachment) {
-                if (bytesRead == -1) {
-                    System.out.println("Connection closed");
+                if (bytesRead == -1)
                     return;
-                }
 
                 byte[] data = new byte[bytesRead];
                 buffer.flip();
@@ -575,7 +560,7 @@ public class HttpRequest implements Request {
 
             @Override
             public void failed(Throwable error, Void attachment) {
-                System.out.println("Failed to read from channel: " + error.getMessage());
+                Logger.error("Failed to read from channel: " + error.getMessage());
                 future.fail(error);
             }
         };

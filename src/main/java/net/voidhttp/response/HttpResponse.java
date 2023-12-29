@@ -21,7 +21,6 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -86,8 +85,6 @@ public class HttpResponse implements Response {
      */
     @Override
     public void send(byte[] bytes, MIMEType type) throws IOException {
-        System.err.println("Sending response " + new String(bytes));
-
         // create data output writer
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         PrintWriter writer = new PrintWriter(stream);
@@ -110,7 +107,6 @@ public class HttpResponse implements Response {
         stream.write(bytes);
 
         byte[] data = stream.toByteArray();
-        System.err.println("sending: " + new String(data));
 
         // write the response to the client using the specified size of chunks
         int bytesToWrite = data.length;

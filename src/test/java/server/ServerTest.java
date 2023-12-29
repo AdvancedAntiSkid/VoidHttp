@@ -9,7 +9,7 @@ public class ServerTest {
         server.getConfig().setSendStackTrace(false);
 
         server.get("/", (req, res) -> {
-            System.out.println("Received request");
+            // System.out.println("Received request");
             res.send("Hello, World!");
         });
 
