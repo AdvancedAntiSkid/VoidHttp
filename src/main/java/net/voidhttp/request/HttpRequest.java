@@ -160,7 +160,11 @@ public class HttpRequest implements Request {
     }
 
     public Future<Void> parse() {
-        nextChunk(ReadState.HEADERS_START);
+        try {
+            nextChunk(ReadState.HEADERS_START);
+        } catch (Throwable t) {
+            completionHandler.fail(t);
+        }
         return completionHandler;
     }
 
@@ -322,7 +326,13 @@ public class HttpRequest implements Request {
         // create request transfer data holder
         data = new RequestData();
 
-        if (headers.has("content-type") && headers.get("content-type").equals("multipart/form-data"))
+        // do not parse the content if the request does not have a content type, there is no content
+        if (!headers.has("content-type")) {
+            completionHandler.complete(null);
+            return;
+        }
+
+        if (headers.get("content-type").equals("multipart/form-data"))
             throw new RuntimeException("multipart/form-data not implemented yet");
 
         handleSizedContentStart();
@@ -371,127 +381,6 @@ public class HttpRequest implements Request {
         }
 
         completionHandler.complete(null);
-    }
-
-    /**
-     * Handle the http request.
-     */
-    private void open(PushbackBuffer stream, int firstBytesRead) throws Exception {
-        // create a tokenizer for parsing input
-        String descriptor = stream.readLine();
-        if (descriptor == null)
-            return;
-
-        StringTokenizer tokenizer = new StringTokenizer(descriptor);
-
-        // determine the request method
-        String methodToken = tokenizer.nextToken().toUpperCase();
-        method = Method.of(methodToken);
-        if (method == null)
-            throw new RuntimeException("Invalid request method: " + methodToken);
-
-        // get the requested url
-        // the route and parameters are separated using a question mark
-        String[] url = tokenizer.nextToken().split("\\?");
-        route = url[0];
-        // parse the url parameters
-        parameters = url.length > 1
-            ? RequestParameters.parse(url[1])
-            : RequestParameters.empty();
-
-        // read the headers of the request
-        List<String> lines = new ArrayList<>();
-        String line;
-        while ((line = stream.readLine()) != null) {
-            // the headers and the request body is separated using an empty line
-            // stop processing headers if the line is empty
-            if (line.isEmpty())
-                break;
-            // append the header line
-            lines.add(line);
-        }
-
-        // parse the request headers
-        headers = HttpHeaders.parse(lines);
-        // parse the request cookies
-        // check if there is a header with the key "cookie"
-        String header = headers.get("cookie");
-        cookies = header != null
-            ? RequestCookies.parse(header)
-            : RequestCookies.empty();
-        // create request transfer data holder
-        data = new RequestData();
-
-        // get the type of the data sent
-        String contentType = headers.get("content-type");
-
-        // handle multipart/form-data request body parsing
-        // sadly in this case, the content length is not guaranteed, therefore we have to separately parse the body
-        if (contentType != null && contentType.startsWith("multipart/form-data")) {
-            // get the boundary of the multipart/form-data body that will indicate
-            // how the form entries should be separated and when the body ends
-            String boundary = contentType.split(";")[1].split("=")[1];
-
-            // parse the multipart/form-data body
-            parseMultipartData(stream, boundary);
-            return;
-        }
-
-        // TODO: parse application/x-www-form-urlencoded
-        // else if (contentType != null && contentType.startsWith("application/x-www-form-urlencoded")) {
-        //     return;
-        // }
-
-        // read the body of the request as binary
-        String contentLength = headers.get("Content-Length");
-        if (contentLength != null) {
-            int totalContentBytes = Integer.parseInt(contentLength);
-
-            ByteArrayOutputStream data = new ByteArrayOutputStream(totalContentBytes);
-
-            int contentStart = stream.position();
-            int firstContentBytes = firstBytesRead - contentStart;
-
-            byte[] buffer = new byte[config.getContentReadSize()];
-            int bytesRead = stream.read(buffer, 0, firstContentBytes);
-            data.write(buffer, 0, bytesRead);
-
-            System.err.println("CONTENT: " + data.toString(StandardCharsets.UTF_8));
-
-/*
-
-
-
-            byte[] buffer = new byte[config.getChunkSize()];
-            ByteArrayOutputStream data = new ByteArrayOutputStream(totalContentBytes);
-
-            int bytesRead;
-            int totalBytesRead = 0;
-
-            while (
-                totalBytesRead < totalContentBytes &&
-                (bytesRead = stream.read(buffer, 0, Math.min(config.getChunkSize(), totalContentBytes - totalBytesRead))) != -1
-            ) {
-                data.write(buffer, 0, bytesRead);
-                totalBytesRead += bytesRead;
-            }
-
-            binary = data.toByteArray();
-            body = data.toString(StandardCharsets.UTF_8);
-
-            if (totalBytesRead != totalContentBytes)
-                Logger.warn("Invalid content totalContentBytes, read: " + totalBytesRead + ", expected: " + totalContentBytes);
-
- */
-        }
-
-        // get the type of the requested content
-        if (contentType != null && contentType.startsWith("application/json")) {
-            // parse the request body to json
-            try {
-                json = (JsonObject) JsonParser.parseString(body);
-            } catch (Exception ignored) {}
-        }
     }
 
     /**
@@ -560,7 +449,8 @@ public class HttpRequest implements Request {
 
             @Override
             public void failed(Throwable error, Void attachment) {
-                Logger.error("Failed to read from channel: " + error.getMessage());
+                Logger.error("Failed to read from channel:");
+                error.printStackTrace();
                 future.fail(error);
             }
         };

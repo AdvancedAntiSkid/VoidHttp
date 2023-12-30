@@ -13,6 +13,10 @@ public class ServerTest {
             res.send("Hello, World!");
         });
 
+        server.post("/test", (req, res) -> {
+            res.send("Example post response!");
+        });
+
         server.get("/failed", (req, res) -> {
             throw new IllegalStateException("Example error");
         });
@@ -21,7 +25,7 @@ public class ServerTest {
             res.status(418).message("I'm a teapot");
         });
 
-        server.listen(80, () -> {
+        server.listen(1234, () -> {
             Logger.success("Webserver has been started");
         });
 

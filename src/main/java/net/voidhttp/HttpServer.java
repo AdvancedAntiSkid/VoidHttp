@@ -134,7 +134,7 @@ public class HttpServer {
 
         // create the server socket channel and bind it to the specified port
         server = AsynchronousServerSocketChannel.open(createChannelGroup());
-        server.bind(new InetSocketAddress("127.0.0.1", port));
+        server.bind(new InetSocketAddress("127.0.0.1", port), 1000);
 
         // accept incoming socket connections
         channelPool = new SocketChannelPool(
