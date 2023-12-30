@@ -15,8 +15,7 @@ import java.util.concurrent.Executors;
 public class MassRequestTest {
     private static final String URL = "http://localhost:1234/test";
 
-    private static final int MAX_REQUESTS = 10_000;
-    private static final int PROCESSING_TIME = 1000;
+    private static final int MAX_REQUESTS = 100_000;
 
     private static int completed;
     private static int failed;
@@ -25,9 +24,8 @@ public class MassRequestTest {
     public static void main(String[] args) throws Exception {
         try (ExecutorService executor = Executors.newFixedThreadPool(10)) {
             long start = System.currentTimeMillis();
-            for (int i = 0; i < MAX_REQUESTS; i++) {
+            for (int i = 0; i < MAX_REQUESTS; i++)
                 executor.submit(MassRequestTest::sendRequest);
-            }
 
             while (total < MAX_REQUESTS)
                 Thread.sleep(1);
@@ -42,7 +40,7 @@ public class MassRequestTest {
     @SneakyThrows
     private static void sendRequest() {
         try {
-            String data = Randomizer.randomString(128);
+            String data = Randomizer.randomString(32);
 
             HttpURLConnection connection = (HttpURLConnection) new URL(URL).openConnection();
             connection.setRequestMethod("POST");
