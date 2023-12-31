@@ -528,35 +528,50 @@ public class HttpRequest implements Request {
         multipart = new RequestMultipartForm(entries);
     }
 
+    /**
+     * Read the next `bufferSize` amount of bytes from the socket channel.
+     * @param bufferSize the amount of bytes to be read
+     * @return the future that will be completed with the buffer that was read
+     */
     private Future<PushbackBuffer> readChannel(int bufferSize) {
         Future<PushbackBuffer> future = new Future<>();
 
+        // allocate a buffer of the specified chunk size
         ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
         Tuple<Long, TimeUnit> readTimeout = config.getReadTimeout();
 
+        // create a handler that will be called when the buffer has been read
         CompletionHandler<Integer, Void> handler = new CompletionHandler<>() {
             @Override
             public void completed(Integer bytesRead, Void attachment) {
-                if (bytesRead == -1)
+                // check if the end of the stream has been reached
+                if (bytesRead == -1) {
+                    future.fail(new RuntimeException("End of stream reached"));
                     return;
+                }
 
+                // get the read bytes from the buffer
                 byte[] data = new byte[bytesRead];
                 buffer.flip();
                 buffer.get(data);
 
+                // create an input stream from the read bytes
                 ByteArrayInputStream stream = new ByteArrayInputStream(data);
 
+                // wrap the input stream in a pushback buffer
                 future.complete(new PushbackBuffer(stream));
             }
 
             @Override
             public void failed(Throwable error, Void attachment) {
+                // check if and error occurred whilst reading from the socket channel
                 Logger.error("Failed to read from channel:");
                 error.printStackTrace();
                 future.fail(error);
             }
         };
 
+        // read the next chunk from the socket channel using the specified timeout and handler
         channel.read(buffer, readTimeout.getFirst(), readTimeout.getSecond(), null, handler);
         return future;
     }

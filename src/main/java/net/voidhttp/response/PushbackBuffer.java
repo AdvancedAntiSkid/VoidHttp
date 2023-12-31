@@ -108,10 +108,18 @@ public class PushbackBuffer extends PushbackInputStream {
         return new Tuple<>(builder.toString(), newLine);
     }
 
+    /**
+     * Retrieve the current position of the buffer chunk.
+     * @return the amount of bytes that are read from the buffer
+     */
     public int position() {
         return pos;
     }
 
+    /**
+     * Retrieve the total size of the buffer chunk in bytes.
+     * @return the size of the buffer chunk
+     */
     public int size() {
         return size;
     }
