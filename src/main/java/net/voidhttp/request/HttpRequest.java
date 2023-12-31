@@ -197,6 +197,11 @@ public class HttpRequest implements Request {
         return completionHandler;
     }
 
+    /**
+     * Parse the next chunk from the socket channel.
+     * @param nextState the next type of chunk to be processed
+     * @return future that will be completed when the chunk has been parsed
+     */
     private Future<Void> nextChunk(ReadState nextState) {
         return switch (nextState) {
             case HEADERS_START -> handleHeaderStart();
@@ -209,6 +214,11 @@ public class HttpRequest implements Request {
         };
     }
 
+    /**
+     * Handle the start of the header reading process. Read the initial {@link ServerConfig#getHeaderReadSize()} bytes
+     * from the socket channel. If the headers are not finished, read the next chunk.
+     * @return future that will be completed when the request processing is completed
+     */
     private Future<Void> handleHeaderStart() {
         Future<Void> future = new Future<>();
 
@@ -284,6 +294,11 @@ public class HttpRequest implements Request {
         return future;
     }
 
+    /**
+     * Handle the continuation of the header reading process, because the initial chunk couldn't fit the entire
+     * headers. Read the next {@link ServerConfig#getHeaderReadSize()} chunk from the socket channel.
+     * @return future that will be completed when the request processing is completed
+     */
     private Future<Void> handleHeaderContinue() {
         // before reading the next header chunk, check if the header size has not exceeded the maximum size
         if (totalHeaderSize > config.getMaxHeaderSize())
@@ -361,6 +376,10 @@ public class HttpRequest implements Request {
         return future;
     }
 
+    /**
+     * Handle the parsing of the headers. The headers have been read, now parse them.
+     * @return future that will be completed when the request processing is completed
+     */
     private Future<Void> handleHeaderParse() {
         Future<Void> future = new Future<>();
 
@@ -397,6 +416,10 @@ public class HttpRequest implements Request {
         return future;
     }
 
+    /**
+     * Handle the beginning of the content reading process. Use a specific reader for the content type.
+     * @return future that will be completed when the request processing is completed
+     */
     private Future<Void> handleSizedContentStart() {
         if (!headers.has("content-length"))
             return Future.failed(new IllegalStateException(
@@ -408,6 +431,12 @@ public class HttpRequest implements Request {
         return handleSizedContentContinue();
     }
 
+    /**
+     * Handle the continuation of the sized content reading process. Read the next
+     * {@link ServerConfig#getContentReadSize()} chunk from the socket channel. If the content length is less
+     * than the specified chunk size, VoidHttp will only read the content length amount of bytes.
+     * @return future that will be completed when the request processing is completed
+     */
     private Future<Void> handleSizedContentContinue() {
         Future<Void> future = new Future<>();
 
@@ -433,6 +462,10 @@ public class HttpRequest implements Request {
         return future;
     }
 
+    /**
+     * Handle the parsing of the sized content. The content has been read, now parse it.
+     * @return future that will be completed when the request processing is completed
+     */
     private Future<Void> handleSizedContentParse() {
         return Future.tryComplete(() -> {
             binary = contentBuffer.toByteArray();
