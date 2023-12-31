@@ -7,7 +7,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
 
+/**
+ * Represents a buffer that is used to process a chunk that is read from a socket channel.
+ * <p>
+ * This buffer is used to read the headers and the content of the request.
+ */
 public class PushbackBuffer extends PushbackInputStream {
+    /**
+     * The amount of bytes that are read from the chunk.
+     */
     private final int size;
 
     /**
@@ -62,6 +70,11 @@ public class PushbackBuffer extends PushbackInputStream {
         return builder.toString();
     }
 
+    /**
+     * Read the next line from a binary input stream. Handle lines that are not terminated with \n.
+     * @return the next line and whether it's terminated with \n
+     * @throws IOException error whilst reading
+     */
     public Tuple<String, Boolean> readHeaderLine() throws IOException {
         StringBuilder builder = new StringBuilder();
         int read;
