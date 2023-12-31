@@ -129,15 +129,39 @@ public class HttpRequest implements Request {
      */
     private boolean passed;
 
+    /**
+     * The future that will be completed when the request has been parsed.
+     */
     private final Future<Void> completionHandler = new Future<>();
 
+    /**
+     * The list of raw header that have not been parsed yet.
+     */
     private final List<String> headerLines = new ArrayList<>();
+
+    /**
+     * The last read header value, that is used to continue parsing a header if it is stuck between two chunks.
+     */
     private String lastHeaderLinePart;
+
+    /**
+     * The indication, whether the last header line was incomplete.
+     */
     private boolean incompleteHeader;
 
+    /**
+     * The total size in byes of the headers.
+     */
     private int totalHeaderSize;
 
+    /**
+     * The buffer that will be used to store the content of the request.
+     */
     private final ByteArrayOutputStream contentBuffer = new ByteArrayOutputStream();
+
+    /**
+     * The expected size in bytes of the request content. This is specified by the `Content-Length` header.
+     */
     private int contentLength;
 
     /**
@@ -159,8 +183,13 @@ public class HttpRequest implements Request {
         query = new RequestQuery(new HashMap<>());
     }
 
+    /**
+     * Begin reading the request from the socket channel.
+     * @return future that will be completed when the request has been parsed
+     */
     public Future<Void> parse() {
         try {
+            // read the fire chunk of the request for the headers
             nextChunk(ReadState.HEADERS_START);
         } catch (Throwable t) {
             completionHandler.fail(t);
@@ -168,8 +197,8 @@ public class HttpRequest implements Request {
         return completionHandler;
     }
 
-    private void nextChunk(ReadState nextState) {
-        switch (nextState) {
+    private Future<Void> nextChunk(ReadState nextState) {
+        return switch (nextState) {
             case HEADERS_START -> handleHeaderStart();
             case HEADERS_CONTINUE -> handleHeaderContinue();
             case HEADERS_PARSE -> handleHeaderParse();
@@ -180,7 +209,9 @@ public class HttpRequest implements Request {
         };
     }
 
-    private void handleHeaderStart() {
+    private Future<Void> handleHeaderStart() {
+        Future<Void> future = new Future<>();
+
         readChannel(config.getHeaderReadSize()).tryThen(buffer -> {
             String descriptor = buffer.readLine();
             if (descriptor == null)
@@ -214,7 +245,9 @@ public class HttpRequest implements Request {
                 // this means a header is incomplete, and we have to read the next chunk
                 if (!newLine) {
                     incompleteHeader = true;
-                    nextChunk(ReadState.HEADERS_CONTINUE);
+                    nextChunk(ReadState.HEADERS_CONTINUE)
+                        .then(future::complete)
+                        .except(future::fail);
                     return;
                 }
 
@@ -227,7 +260,9 @@ public class HttpRequest implements Request {
                     // read all remaining bytes from the buffer
                     contentBuffer.write(buffer.readAllBytes());
 
-                    nextChunk(ReadState.HEADERS_PARSE);
+                    nextChunk(ReadState.HEADERS_PARSE)
+                        .then(future::complete)
+                        .except(future::fail);
                     return;
                 }
 
@@ -241,16 +276,22 @@ public class HttpRequest implements Request {
             // end of buffer reached, but the header is not complete
             // this means we have to read the next chunk
             // no header line is incomplete, so we don't have to append the last header line part
-            nextChunk(ReadState.HEADERS_CONTINUE);
-        });
+            nextChunk(ReadState.HEADERS_CONTINUE)
+                .then(future::complete)
+                .except(future::fail);
+        }).except(future::fail);
+
+        return future;
     }
 
-    private void handleHeaderContinue() {
+    private Future<Void> handleHeaderContinue() {
         // before reading the next header chunk, check if the header size has not exceeded the maximum size
         if (totalHeaderSize > config.getMaxHeaderSize())
-            throw new RuntimeException(
+            return Future.failed(new RuntimeException(
                 "Header size " + totalHeaderSize + " exceeded maximum size of " + config.getMaxHeaderSize() + " bytes"
-            );
+            ));
+
+        Future<Void> future = new Future<>();
 
         readChannel(config.getHeaderReadSize()).tryThen(buffer -> {
             // check if a header was started in the previous chunk read
@@ -281,7 +322,9 @@ public class HttpRequest implements Request {
                 // this means a header is incomplete, and we have to read the next chunk
                 if (!newLine) {
                     incompleteHeader = true;
-                    nextChunk(ReadState.HEADERS_CONTINUE);
+                    nextChunk(ReadState.HEADERS_CONTINUE)
+                        .then(future::complete)
+                        .except(future::fail);
                     return;
                 }
 
@@ -294,7 +337,9 @@ public class HttpRequest implements Request {
                     // read all remaining bytes from the buffer
                     contentBuffer.write(buffer.readAllBytes());
 
-                    nextChunk(ReadState.HEADERS_PARSE);
+                    nextChunk(ReadState.HEADERS_PARSE)
+                        .then(future::complete)
+                        .except(future::fail);
                     return;
                 }
 
@@ -308,50 +353,67 @@ public class HttpRequest implements Request {
             // end of buffer reached, but the header is not complete
             // this means we have to read the next chunk
             // no header line is incomplete, so we don't have to append the last header line part
-            nextChunk(ReadState.HEADERS_CONTINUE);
-        });
+            nextChunk(ReadState.HEADERS_CONTINUE)
+                .then(future::complete)
+                .except(future::fail);
+        }).except(future::fail);
+
+        return future;
     }
 
-    private void handleHeaderParse() {
-        // header processing has been finished, parse the headers
-        headers = HttpHeaders.parse(headerLines);
+    private Future<Void> handleHeaderParse() {
+        Future<Void> future = new Future<>();
 
-        // parse the request cookies
-        // check if there is a header with the key "cookie"
-        String header = headers.get("cookie");
-        cookies = header != null
-            ? RequestCookies.parse(header)
-            : RequestCookies.empty();
+        Future.tryComplete(() -> {
+            // header processing has been finished, parse the headers
+            headers = HttpHeaders.parse(headerLines);
 
-        // create request transfer data holder
-        data = new RequestData();
+            // parse the request cookies
+            // check if there is a header with the key "cookie"
+            String header = headers.get("cookie");
+            cookies = header != null
+                ? RequestCookies.parse(header)
+                : RequestCookies.empty();
 
-        // do not parse the content if the request does not have a content type, there is no content
-        if (!headers.has("content-type")) {
-            completionHandler.complete(null);
-            return;
-        }
+            // create request transfer data holder
+            data = new RequestData();
 
-        if (headers.get("content-type").equals("multipart/form-data"))
-            throw new RuntimeException("multipart/form-data not implemented yet");
+            // do not parse the content if the request does not have a content type, there is no content
+            if (!headers.has("content-type")) {
+                completionHandler.complete(null);
+                return null;
+            }
 
-        handleSizedContentStart();
+            if (headers.get("content-type").equals("multipart/form-data"))
+                throw new RuntimeException("multipart/form-data not implemented yet");
+
+            handleSizedContentStart()
+                .then(future::complete)
+                .except(future::fail);
+
+            return null;
+        }).except(future::fail);
+
+        return future;
     }
 
-    private void handleSizedContentStart() {
+    private Future<Void> handleSizedContentStart() {
         if (!headers.has("content-length"))
-            throw new IllegalStateException(
+            return Future.failed(new IllegalStateException(
                 "Header `content-length` must be specified for `" + headers.get("content-type") + "` request"
-            );
+            ));
 
         contentLength = Integer.parseInt(headers.get("content-length"));
 
-        handleSizedContentContinue();
+        return handleSizedContentContinue();
     }
 
-    private void handleSizedContentContinue() {
+    private Future<Void> handleSizedContentContinue() {
+        Future<Void> future = new Future<>();
+
         int remainingBytes = contentLength - contentBuffer.size();
         int readSize = Math.min(config.getContentReadSize(), remainingBytes);
+
         readChannel(readSize).tryThen(buffer -> {
             contentBuffer.write(buffer.readAllBytes());
 
@@ -361,26 +423,33 @@ public class HttpRequest implements Request {
                     config.getMaxContentLength() + " bytes"
                 );
 
-            if (contentBuffer.size() < contentLength)
-                handleSizedContentContinue();
-            else
-                handleSizedContentParse();
-        });
+            Future<Void> callback = contentBuffer.size() < contentLength
+                ? handleSizedContentContinue()
+                : handleSizedContentParse();
+
+            callback.then(future::complete).except(future::fail);
+        }).except(future::fail);
+
+        return future;
     }
 
-    private void handleSizedContentParse() {
-        binary = contentBuffer.toByteArray();
-        body = contentBuffer.toString(StandardCharsets.UTF_8);
+    private Future<Void> handleSizedContentParse() {
+        return Future.tryComplete(() -> {
+            binary = contentBuffer.toByteArray();
+            body = contentBuffer.toString(StandardCharsets.UTF_8);
 
-        // get the type of the requested content
-        if (headers.get("content-type").equals("application/json")) {
-            // parse the request body to json
-            try {
-                json = (JsonObject) JsonParser.parseString(body);
-            } catch (Exception ignored) {}
-        }
+            // get the type of the requested content
+            if (headers.get("content-type").equals("application/json")) {
+                // parse the request body to json
+                try {
+                    json = (JsonObject) JsonParser.parseString(body);
+                } catch (Exception ignored) {}
+            }
 
-        completionHandler.complete(null);
+            completionHandler.complete(null);
+
+            return null;
+        });
     }
 
     /**
