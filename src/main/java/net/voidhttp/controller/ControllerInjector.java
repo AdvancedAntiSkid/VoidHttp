@@ -3,6 +3,7 @@ package net.voidhttp.controller;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import dev.inventex.octa.concurrent.future.Future;
+import dev.inventex.octa.console.Logger;
 import lombok.SneakyThrows;
 import net.voidhttp.HttpServer;
 import net.voidhttp.controller.dto.Dto;
@@ -14,7 +15,6 @@ import net.voidhttp.controller.route.*;
 import net.voidhttp.controller.validator.*;
 import net.voidhttp.router.Middleware;
 import net.voidhttp.util.asset.MIMEType;
-import net.voidhttp.util.console.Logger;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;

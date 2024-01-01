@@ -1,7 +1,7 @@
 package server;
 
+import dev.inventex.octa.console.Logger;
 import net.voidhttp.HttpServer;
-import net.voidhttp.util.console.Logger;
 
 public class ServerTest {
     public static void main(String[] args) throws Exception {

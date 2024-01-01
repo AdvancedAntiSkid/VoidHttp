@@ -3,6 +3,7 @@ package net.voidhttp.request;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.inventex.octa.concurrent.future.Future;
+import dev.inventex.octa.console.Logger;
 import dev.inventex.octa.data.primitive.Tuple;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,7 +25,6 @@ import net.voidhttp.request.query.Query;
 import net.voidhttp.request.query.RequestQuery;
 import net.voidhttp.request.session.Session;
 import net.voidhttp.response.PushbackBuffer;
-import net.voidhttp.util.console.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
