@@ -106,4 +106,9 @@ public class ServerConfig {
      * This option is useful for debugging for development purposes, but is strongly discouraged for production.
      */
     private boolean sendStackTrace = true;
+
+    /**
+     * The maximum number of pending connections that can be queued.
+     */
+    private int backlog = 0;
 }

@@ -16,7 +16,6 @@ import java.net.InetSocketAddress;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
-import java.nio.channels.CompletionHandler;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.function.BiConsumer;
@@ -134,15 +133,12 @@ public class HttpServer {
             throw new IllegalStateException("Server is already running");
 
         // create the server socket channel and bind it to the specified port
-        server = AsynchronousServerSocketChannel.open(createChannelGroup());
-        server.bind(new InetSocketAddress(host, port), 1000);
+        server = AsynchronousServerSocketChannel
+            .open(createChannelGroup())
+            .bind(new InetSocketAddress(host, port), config.getBacklog());
 
         // accept incoming socket connections
-        channelPool = new SocketChannelPool(
-            server,
-            config,
-            this::acceptConnection
-        );
+        channelPool = new SocketChannelPool(server, config, this::acceptConnection);
         channelPool.acceptSockets();
 
         // notify startup actions
@@ -168,9 +164,9 @@ public class HttpServer {
      */
     @SneakyThrows
     private AsynchronousChannelGroup createChannelGroup() {
+        // in case of virtual threads, we should not pool them
+        // for more information, visit: https://docs.oracle.com/en/java/javase/20/core/virtual-threads.html#GUID-9065C2D5-9006-4F1A-93E0-D5153BB40475
         return AsynchronousChannelGroup.withThreadPool(
-            // in case of virtual threads, we should not pool them
-            // for more information, visit: https://docs.oracle.com/en/java/javase/20/core/virtual-threads.html#GUID-9065C2D5-9006-4F1A-93E0-D5153BB40475
             config.isVirtualThreads() ?
                 Executors.newVirtualThreadPerTaskExecutor() :
                 Executors.newFixedThreadPool(config.getPoolSize())
