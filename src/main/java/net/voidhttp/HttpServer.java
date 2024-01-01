@@ -123,18 +123,19 @@ public class HttpServer {
 
     /**
      * Start the HTTP server and begin listening for requests.
-     * @param port server port
+     * @param host the server bind host
+     * @param port the server bind port
      * @param actions server startup handlers
      */
     @SneakyThrows
-    public void listen(int port, Runnable... actions) {
+    public void listen(String host, int port, Runnable... actions) {
         // check if the server is already running
         if (isRunning())
             throw new IllegalStateException("Server is already running");
 
         // create the server socket channel and bind it to the specified port
         server = AsynchronousServerSocketChannel.open(createChannelGroup());
-        server.bind(new InetSocketAddress("127.0.0.1", port), 1000);
+        server.bind(new InetSocketAddress(host, port), 1000);
 
         // accept incoming socket connections
         channelPool = new SocketChannelPool(
@@ -147,6 +148,16 @@ public class HttpServer {
         // notify startup actions
         for (Runnable action : actions)
             action.run();
+    }
+
+    /**
+     * Start the HTTP server and begin listening for requests.
+     * @param port the server bind port
+     * @param actions server startup handlers
+     */
+    @SneakyThrows
+    public void listen(int port, Runnable... actions) {
+        listen("127.0.0.1", port, actions);
     }
 
     /**
