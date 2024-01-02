@@ -1,4 +1,4 @@
-package net.voidhttp.response;
+package net.voidhttp.request;
 
 import dev.inventex.octa.data.primitive.Tuple;
 import lombok.SneakyThrows;

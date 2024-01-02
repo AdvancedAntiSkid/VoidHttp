@@ -24,7 +24,6 @@ import net.voidhttp.request.parameter.RequestParameters;
 import net.voidhttp.request.query.Query;
 import net.voidhttp.request.query.RequestQuery;
 import net.voidhttp.request.session.Session;
-import net.voidhttp.response.PushbackBuffer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
